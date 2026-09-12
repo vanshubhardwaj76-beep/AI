@@ -13,7 +13,7 @@ import { useProfileStore } from '@/store/profileStore';
 import { useMoodStore } from '@/store/moodStore';
 import { useAdventureStore, formatDuration, phaseOf, progressOf, remainingMs } from '@/store/adventureStore';
 import { useAdventureClock } from '@/hooks/useAdventureClock';
-import { Environment } from '@/components/pet/Environment';
+import { AwayStage } from '@/components/adventure/AwayStage';
 import { useTodayProgress } from '@/hooks/useToday';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing, radius, shadows } from '@/theme';
@@ -72,17 +72,8 @@ export default function HomeScreen() {
       {/* Stage: pet on environment */}
       <Animated.View entering={FadeIn.duration(400)} style={[styles.stage, shadows.card, { width: stageSize, alignSelf: 'center' }]}>
         {away && activeRun && activeLoc ? (
-          /* Pet is NOT home: show the empty house + an "away" card */
-          <View style={{ borderRadius: 36, overflow: 'hidden' }}>
-            <Environment id={pet.environmentId} size={stageSize} />
-            <View style={[styles.awayCard, { backgroundColor: isDark ? colors.card : 'rgba(255,255,255,0.94)', borderColor: colors.border }]}>
-              <IconTile name={activeLoc.icon} color={activeLoc.color} size={48} />
-              <Text variant="bodyBold" center style={{ marginTop: spacing.sm }}>{pet.name} is away on an adventure</Text>
-              <Text variant="caption" muted center>{phase === 'returned' ? `Just got back from ${activeLoc.name}!` : `Exploring ${activeLoc.name} · back in ${formatDuration(remainingMs(activeRun.endsAt, now))}`}</Text>
-              <ProgressBar value={phase === 'returned' ? 1 : progressOf(activeRun.startedAt, activeRun.endsAt, now)} color={activeLoc.color} height={8} style={{ alignSelf: 'stretch', marginTop: spacing.sm }} />
-              <Button title={phase === 'returned' ? 'Welcome them home' : 'Check in'} size="sm" onPress={() => router.push('/adventure')} style={{ marginTop: spacing.sm }} />
-            </View>
-          </View>
+          /* Pet is NOT home: empty room + away card */
+          <AwayStage pet={pet} size={stageSize} />
         ) : (
           <PetAvatar pet={pet} size={stageSize} state={resting ? 'SLEEPING' : undefined} interactive={!resting} onPet={() => setLineSeed((s) => s + 1)} />
         )}
@@ -235,7 +226,6 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
   coin: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 42, borderRadius: radius.pill, borderWidth: 1 },
   stage: { borderRadius: 36 },
-  awayCard: { position: 'absolute', left: '10%', right: '10%', top: '22%', alignItems: 'center', padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, ...shadows.card },
   levelBadge: { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, borderWidth: 1 },
   bubble: { position: 'absolute', bottom: 14, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.md, borderWidth: 1, maxWidth: '80%', ...shadows.soft },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

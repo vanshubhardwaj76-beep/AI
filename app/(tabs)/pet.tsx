@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Screen, Text, Card, Button, ProgressBar, Chip, Input, Sheet, useToast, Icon, IconTile } from '@/components/ui';
 import type { IconName } from '@/components/ui';
 import { PetAvatar } from '@/components/pet/PetAvatar';
+import { AwayStage } from '@/components/adventure/AwayStage';
 import { Environment } from '@/components/pet/Environment';
 import { PixelSprite } from '@/engine/PixelSprite';
 import { accessoryPreview } from '@/engine/accessories';
@@ -95,12 +96,18 @@ export default function PetScreen() {
       </View>
 
       <View style={[styles.stage, shadows.card, { width: stageSize, alignSelf: 'center' }]}>
-        {/* Wardrobe preview: while away this is a mannequin-style preview, not the pet at home */}
-        <PetAvatar pet={pet} size={stageSize} state={away ? 'WALKING' : phase === 'resting' ? 'SLEEPING' : undefined} interactive={!activeRun} />
-        <View style={[styles.moodTag, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Icon name={away ? 'compass' : phase === 'resting' ? 'moon' : MOOD_ICON[pet.mood]} size={14} color={colors.primary} />
-          <Text variant="caption" style={{ marginLeft: 5, fontFamily: 'Nunito_700Bold' }}>{away ? 'Away (preview)' : phase === 'resting' ? 'Resting' : MOOD_LABEL[pet.mood]}</Text>
-        </View>
+        {/* While away the pet is NOT at home – show the empty room + away card instead */}
+        {away ? (
+          <AwayStage pet={pet} size={stageSize} />
+        ) : (
+          <>
+            <PetAvatar pet={pet} size={stageSize} state={phase === 'resting' ? 'SLEEPING' : undefined} interactive={!activeRun} />
+            <View style={[styles.moodTag, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Icon name={phase === 'resting' ? 'moon' : MOOD_ICON[pet.mood]} size={14} color={colors.primary} />
+              <Text variant="caption" style={{ marginLeft: 5, fontFamily: 'Nunito_700Bold' }}>{phase === 'resting' ? 'Resting' : MOOD_LABEL[pet.mood]}</Text>
+            </View>
+          </>
+        )}
       </View>
 
       <Card style={{ marginTop: spacing.md }}>

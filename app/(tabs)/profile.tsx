@@ -4,6 +4,7 @@ import { useRouter, Href } from 'expo-router';
 import { Screen, Header, Text, Card, Icon } from '@/components/ui';
 import type { IconName } from '@/components/ui';
 import { PetAvatar } from '@/components/pet/PetAvatar';
+import { AwayBadge, usePetAway } from '@/components/adventure/AwayStage';
 import { useProfileStore } from '@/store/profileStore';
 import { usePetStore } from '@/store/petStore';
 import { useGoalStore } from '@/store/goalStore';
@@ -17,6 +18,7 @@ export default function ProfileScreen() {
   const { colors } = useTheme();
   const profile = useProfileStore((s) => s.profile);
   const pet = usePetStore((s) => s.pet);
+  const { away } = usePetAway();
   const streak = useGoalStore((s) => s.overallStreak());
   const completions = useGoalStore((s) => s.completions.length);
   const friends = useFriendStore((s) => s.friends.length);
@@ -35,7 +37,7 @@ export default function ProfileScreen() {
     <Screen>
       <Header title="Profile" />
       <Card style={styles.hero}>
-        <PetAvatar pet={pet} size={96} showEnvironment={false} interactive={false} />
+        {away && pet ? <AwayBadge pet={pet} size={96} /> : <PetAvatar pet={pet} size={96} showEnvironment={false} interactive={false} />}
         <View style={{ flex: 1 }}>
           <Text variant="title">{profile?.displayName ?? 'Friend'}</Text>
           <Text muted>with {pet?.name} · Level {pet?.level} {levelTitle(pet?.level ?? 1)}</Text>

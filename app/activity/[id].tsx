@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Screen, Header, Text, Card, Button, EmptyState, ProgressBar } from '@/components/ui';
 import { PetAvatar } from '@/components/pet/PetAvatar';
+import { AwayBadge, usePetAway } from '@/components/adventure/AwayStage';
 import { activityById, ACTIVITY_CATEGORIES } from '@/data/activities';
 import { useActivityStore } from '@/store/activityStore';
 import { usePetStore } from '@/store/petStore';
@@ -18,6 +19,7 @@ export default function ActivityPlayer() {
   const activity = useMemo(() => activityById(id!), [id]);
   const complete = useActivityStore((s) => s.complete);
   const pet = usePetStore((s) => s.pet);
+  const { away } = usePetAway();
 
   const [state, setState] = useState<'idle' | 'running' | 'paused' | 'done'>('idle');
   const [elapsed, setElapsed] = useState(0);
@@ -87,7 +89,7 @@ export default function ActivityPlayer() {
       <Header title={activity.title} back subtitle={`${Math.max(1, Math.round(total / 60))} min · +${activity.xp} XP`} />
       {state === 'done' ? (
         <View style={styles.center}>
-          <PetAvatar pet={pet} size={200} showEnvironment={false} mood="proud" />
+          {away && pet ? <AwayBadge pet={pet} size={140} /> : <PetAvatar pet={pet} size={200} showEnvironment={false} mood="proud" />}
           <Text variant="title" center style={{ marginTop: spacing.md }}>Beautifully done.</Text>
           <Text muted center style={{ marginTop: 4 }}>{pet?.name} feels calmer too.</Text>
           <Button title="Back to activities" size="lg" fullWidth onPress={() => router.back()} style={{ marginTop: spacing.xl }} />

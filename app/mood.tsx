@@ -5,6 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Screen, Header, Text, Card, Button, Input } from '@/components/ui';
 import { MoodPicker } from '@/components/home/MoodPicker';
 import { PetAvatar } from '@/components/pet/PetAvatar';
+import { AwayBadge, usePetAway } from '@/components/adventure/AwayStage';
 import { useMoodStore } from '@/store/moodStore';
 import { usePetStore } from '@/store/petStore';
 import { MoodValue } from '@/types';
@@ -17,6 +18,7 @@ export default function MoodCheckIn() {
   const existing = useMoodStore((s) => s.todays());
   const checkIn = useMoodStore((s) => s.checkIn);
   const pet = usePetStore((s) => s.pet);
+  const { away } = usePetAway();
   const [value, setValue] = useState<MoodValue | null>(existing?.value ?? null);
   const [note, setNote] = useState(existing?.note ?? '');
   const [saved, setSaved] = useState(false);
@@ -45,7 +47,7 @@ export default function MoodCheckIn() {
         </>
       ) : (
         <Animated.View entering={FadeInDown.duration(400)} style={styles.center}>
-          <PetAvatar pet={pet} size={180} showEnvironment={false} />
+          {away && pet ? <AwayBadge pet={pet} size={140} /> : <PetAvatar pet={pet} size={180} showEnvironment={false} />}
           <Card style={{ marginTop: spacing.lg, alignSelf: 'stretch' }}>
             <Text variant="heading" center>{response?.message}</Text>
             {suggested && (
