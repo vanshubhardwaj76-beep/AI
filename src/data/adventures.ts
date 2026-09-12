@@ -89,3 +89,6 @@ export const ADVENTURES: AdventureLocation[] = [
 ];
 
 export const adventureById = (id: string) => ADVENTURES.find((a) => a.id === id);
+
+/** Environment scene used to illustrate each destination. */
+export const LOC_ENV: Record<string, string> = { forest: 'env_forest', beach: 'env_beach', mountains: 'env_cabin', garden: 'env_garden', snow: 'env_village', ruins: 'env_forest', space: 'env_space' };

@@ -11,7 +11,9 @@ import { usePetStore } from '@/store/petStore';
 import { useGoalStore } from '@/store/goalStore';
 import { useProfileStore } from '@/store/profileStore';
 import { useMoodStore } from '@/store/moodStore';
-import { useAdventureStore } from '@/store/adventureStore';
+import { useAdventureStore, formatDuration, phaseOf, progressOf, remainingMs } from '@/store/adventureStore';
+import { useAdventureClock } from '@/hooks/useAdventureClock';
+import { Environment } from '@/components/pet/Environment';
 import { useTodayProgress } from '@/hooks/useToday';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing, radius, shadows } from '@/theme';
@@ -32,7 +34,9 @@ export default function HomeScreen() {
   const streakFor = useGoalStore((s) => s.streakFor);
   const overall = useGoalStore((s) => s.overallStreak());
   const todayMood = useMoodStore((s) => s.todays());
-  const activeRun = useAdventureStore((s) => s.active());
+  const runs = useAdventureStore((s) => s.runs);
+  useAdventureStore((s) => s.tick);
+  const now = useAdventureClock();
   const progress = useTodayProgress();
   const [lineSeed, setLineSeed] = useState(0);
 
@@ -40,7 +44,11 @@ export default function HomeScreen() {
   if (!pet) return null;
 
   const remaining = progress.goals.filter((g) => !progress.isDone(g.id));
+  const activeRun = runs.find((r) => phaseOf(r, now) !== 'idle');
+  const phase = phaseOf(activeRun, now);
   const activeLoc = activeRun ? adventureById(activeRun.locationId) : null;
+  const away = phase === 'on_adventure' || phase === 'returned';
+  const resting = phase === 'resting';
   const moodOpt = todayMood ? MOOD_OPTIONS.find((m) => m.value === todayMood.value) : null;
   const stageSize = Math.min(width - spacing.lg * 2, 420);
 
@@ -63,16 +71,39 @@ export default function HomeScreen() {
 
       {/* Stage: pet on environment */}
       <Animated.View entering={FadeIn.duration(400)} style={[styles.stage, shadows.card, { width: stageSize, alignSelf: 'center' }]}>
-        <PetAvatar pet={pet} size={stageSize} onPet={() => setLineSeed((s) => s + 1)} />
+        {away && activeRun && activeLoc ? (
+          /* Pet is NOT home: show the empty house + an "away" card */
+          <View style={{ borderRadius: 36, overflow: 'hidden' }}>
+            <Environment id={pet.environmentId} size={stageSize} />
+            <View style={[styles.awayCard, { backgroundColor: isDark ? colors.card : 'rgba(255,255,255,0.94)', borderColor: colors.border }]}>
+              <IconTile name={activeLoc.icon} color={activeLoc.color} size={48} />
+              <Text variant="bodyBold" center style={{ marginTop: spacing.sm }}>{pet.name} is away on an adventure</Text>
+              <Text variant="caption" muted center>{phase === 'returned' ? `Just got back from ${activeLoc.name}!` : `Exploring ${activeLoc.name} · back in ${formatDuration(remainingMs(activeRun.endsAt, now))}`}</Text>
+              <ProgressBar value={phase === 'returned' ? 1 : progressOf(activeRun.startedAt, activeRun.endsAt, now)} color={activeLoc.color} height={8} style={{ alignSelf: 'stretch', marginTop: spacing.sm }} />
+              <Button title={phase === 'returned' ? 'Welcome them home' : 'Check in'} size="sm" onPress={() => router.push('/adventure')} style={{ marginTop: spacing.sm }} />
+            </View>
+          </View>
+        ) : (
+          <PetAvatar pet={pet} size={stageSize} state={resting ? 'SLEEPING' : undefined} interactive={!resting} onPet={() => setLineSeed((s) => s + 1)} />
+        )}
         {/* Level badge */}
         <View style={[styles.levelBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Icon name="level" size={14} color="#F4C24B" fill="#F4C24B" />
           <Text variant="caption" style={{ marginLeft: 4, fontFamily: 'Nunito_800ExtraBold' }}>Lv {lvl.level}</Text>
         </View>
-        {/* Speech bubble */}
-        <View style={[styles.bubble, { backgroundColor: isDark ? colors.card : '#FFFFFF', borderColor: colors.border }]}>
-          <Text variant="caption" center numberOfLines={2}>{petLine(pet.mood, lineSeed)}</Text>
-        </View>
+        {/* Speech bubble / resting label */}
+        {!away && (
+          <View style={[styles.bubble, { backgroundColor: isDark ? colors.card : '#FFFFFF', borderColor: colors.border }]}>
+            {resting && activeRun ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Icon name="moon" size={14} color="#8EC5E8" />
+                <Text variant="caption" center>Resting... {formatDuration(remainingMs(activeRun.restEndsAt, now))} left</Text>
+              </View>
+            ) : (
+              <Text variant="caption" center numberOfLines={2}>{petLine(pet.mood, lineSeed)}</Text>
+            )}
+          </View>
+        )}
       </Animated.View>
 
       {/* Name + mood + bars */}
@@ -99,8 +130,10 @@ export default function HomeScreen() {
       </Card>
 
       {/* Contextual banner: adventure or mood */}
-      {activeLoc ? (
-        <Banner icon={activeLoc.icon} color={activeLoc.color} title={`${pet.name} is exploring ${activeLoc.name}`} sub="Tap to check in" onPress={() => router.push('/adventure')} />
+      {activeLoc && away ? (
+        <Banner icon={activeLoc.icon} color={activeLoc.color} title={phase === 'returned' ? `${pet.name} is back from ${activeLoc.name}` : `${pet.name} is exploring ${activeLoc.name}`} sub={phase === 'returned' ? 'See what they found' : 'Tap to check in'} onPress={() => router.push('/adventure')} />
+      ) : activeLoc && resting && activeRun ? (
+        <Banner icon="moon" color="#8EC5E8" title={`${pet.name} is resting after ${activeLoc.name}`} sub={`Ready for another trip in ${formatDuration(remainingMs(activeRun.restEndsAt, now))}`} onPress={() => router.push('/adventure')} />
       ) : pet.energy >= 25 ? (
         <Banner icon="compass" color="#F4A261" title="Enough energy for an adventure" sub={`Send ${pet.name} exploring`} onPress={() => router.push('/adventure')} />
       ) : null}
@@ -202,6 +235,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
   coin: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 42, borderRadius: radius.pill, borderWidth: 1 },
   stage: { borderRadius: 36 },
+  awayCard: { position: 'absolute', left: '10%', right: '10%', top: '22%', alignItems: 'center', padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, ...shadows.card },
   levelBadge: { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, borderWidth: 1 },
   bubble: { position: 'absolute', bottom: 14, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.md, borderWidth: 1, maxWidth: '80%', ...shadows.soft },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

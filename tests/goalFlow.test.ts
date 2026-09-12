@@ -85,7 +85,7 @@ test('journal + mood persist and reward once per day', async () => {
   assert.equal(useMoodStore.getState().todays()?.value, 2);
 });
 
-test('adventure requires energy, claims rewards after time', async () => {
+test('adventure requires energy, completes after time via sync()', async () => {
   const pet = usePetStore.getState();
   await pet.save({ energy: 10 });
   let r = await useAdventureStore.getState().start('forest');
@@ -94,14 +94,18 @@ test('adventure requires energy, claims rewards after time', async () => {
   r = await useAdventureStore.getState().start('forest');
   assert.equal(r.ok, true);
   assert.equal(usePetStore.getState().pet!.energy, 35);
-  const run = useAdventureStore.getState().active()!;
-  assert.equal(await useAdventureStore.getState().claim(run.id), null); // not finished
+  assert.equal(useAdventureStore.getState().phase(), 'on_adventure');
+  const run = useAdventureStore.getState().current()!;
+  assert.equal(await useAdventureStore.getState().sync(), null); // not finished
   // fast-forward
   const finished = { ...run, endsAt: new Date(Date.now() - 1000).toISOString() };
   useAdventureStore.setState({ runs: [finished] });
-  const result = await useAdventureStore.getState().claim(run.id);
-  assert.ok(result && result.xp >= 20 && result.story.includes('Ember'));
-  assert.equal(useAdventureStore.getState().active(), undefined);
+  const done = await useAdventureStore.getState().sync();
+  assert.ok(done && done.result && done.result.xp >= 20 && done.result.story.includes('Ember'));
+  assert.equal(useAdventureStore.getState().phase(), 'returned');
+  await useAdventureStore.getState().markSeen(run.id);
+  assert.equal(useAdventureStore.getState().phase(), 'resting');
+  await useAdventureStore.getState().reset();
 });
 
 test('shop respects coins and level', async () => {

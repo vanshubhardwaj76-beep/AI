@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -8,9 +8,10 @@ interface Props {
   color?: string;
   track?: string;
   height?: number;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function ProgressBar({ value, color, track, height = 12 }: Props) {
+export function ProgressBar({ value, color, track, height = 12, style }: Props) {
   const { colors } = useTheme();
   const w = useSharedValue(0);
   useEffect(() => {
@@ -21,7 +22,7 @@ export function ProgressBar({ value, color, track, height = 12 }: Props) {
     <View
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}
-      style={[styles.track, { backgroundColor: track ?? colors.cardAlt, height, borderRadius: height / 2 }]}
+      style={[styles.track, { backgroundColor: track ?? colors.cardAlt, height, borderRadius: height / 2 }, style]}
     >
       <Animated.View style={[styles.fill, { backgroundColor: color ?? colors.primary, borderRadius: height / 2 }, anim]} />
     </View>

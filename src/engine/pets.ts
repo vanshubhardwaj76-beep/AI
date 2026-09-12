@@ -12,7 +12,17 @@ import { PixelCanvas } from './canvas';
 import type { Sprite } from './sprite';
 import type { PetSpecies } from '@/types';
 
-export type Pose = 'idle' | 'happy' | 'excited' | 'sleepy' | 'tired' | 'tap' | 'levelup' | 'curious' | 'proud' | 'calm';
+export type Pose = 'idle' | 'happy' | 'excited' | 'sleepy' | 'resting' | 'tired' | 'tap' | 'levelup' | 'curious' | 'proud' | 'calm' | 'walking';
+
+/**
+ * High-level animation states used across the app (home, adventure, return
+ * sequence…). Every state maps onto a sprite pose + container motion inside
+ * PetAvatar, so screens never hard-code their own pet animations.
+ */
+export type PetAnimState = 'HOME_IDLE' | 'WALKING' | 'HAPPY' | 'EXCITED' | 'SLEEPING' | 'RESTING' | 'CURIOUS' | 'PROUD' | 'TIRED';
+export const STATE_POSE: Record<PetAnimState, Pose> = {
+  HOME_IDLE: 'idle', WALKING: 'walking', HAPPY: 'happy', EXCITED: 'excited', SLEEPING: 'sleepy', RESTING: 'resting', CURIOUS: 'curious', PROUD: 'proud', TIRED: 'tired',
+};
 
 export interface Anchors {
   /** centre of head top for hats */
@@ -345,6 +355,31 @@ interface FrameSpec {
   mouth: 'smile' | 'open' | 'flat' | 'o' | 'small' | 'grin';
   decor?: (c: PixelCanvas) => void;
   shadow?: boolean;
+  /** walking stride: -1 / 0 / 1 – scissors the feet rows horizontally */
+  stride?: number;
+}
+
+/**
+ * Species-agnostic leg cycle: the bottom rows (feet/paws) are shifted so the
+ * left leg moves forward while the right moves back, and vice-versa. Combined
+ * with the 1px body bob this reads as a bouncy pixel walk on every species.
+ */
+function applyStride(c: PixelCanvas, ground: number, stride: number) {
+  if (!stride) return;
+  const rows = [ground - 1, ground, ground + 1];
+  for (const y of rows) {
+    const row = c.grid[y];
+    if (!row) continue;
+    const src = [...row];
+    for (let x = 0; x < c.size; x++) row[x] = null;
+    for (let x = 0; x < c.size; x++) {
+      const px = src[x];
+      if (!px) continue;
+      const dx = x < 16 ? stride : -stride;
+      const nx = x + dx;
+      if (nx >= 0 && nx < c.size) row[nx] = px;
+    }
+  }
 }
 
 function build(species: PetSpecies, spec: FrameSpec): Sprite {
@@ -355,6 +390,7 @@ function build(species: PetSpecies, spec: FrameSpec): Sprite {
   c.shade(p.body, p.light, p.dark);
   c.shade(p.accent, p.accent, p.accentDark);
   c.outline(p.outline);
+  applyStride(c, ANCHORS[species].ground, spec.stride ?? 0);
   face(c, p, f.ex, f.ey, f.gap, spec.expr, spec.mouth);
   spec.decor?.(c);
   // ground shadow
@@ -391,6 +427,17 @@ export function getPetSheet(species: PetSpecies): PetSheet {
     tired: [
       B({ body: { bob: 1, squash: 0.5, limbs: 'down' }, expr: 'droop', mouth: 'flat', decor: (c) => sweat(c, 25, 9) }),
       B({ body: { bob: 1, squash: 0.5, limbs: 'down' }, expr: 'droop', mouth: 'flat', decor: (c) => sweat(c, 25, 10) }),
+    ],
+    resting: [
+      B({ body: { bob: 1, squash: 0.6, limbs: 'down' }, expr: 'closed', mouth: 'small' }),
+      B({ body: { bob: 1, squash: 0.6, limbs: 'down' }, expr: 'closed', mouth: 'small' }),
+      B({ body: { bob: 0, squash: 0.4, limbs: 'down' }, expr: 'closed', mouth: 'small' }),
+    ],
+    walking: [
+      B({ body: { bob: 0, squash: -0.3, limbs: 'rest' }, expr: 'happy', mouth: 'smile', stride: 1 }),
+      B({ body: { bob: 1, squash: 0.3, limbs: 'rest' }, expr: 'happy', mouth: 'smile', stride: 0 }),
+      B({ body: { bob: 0, squash: -0.3, limbs: 'rest' }, expr: 'happy', mouth: 'smile', stride: -1 }),
+      B({ body: { bob: 1, squash: 0.3, limbs: 'rest' }, expr: 'open', mouth: 'smile', stride: 0 }),
     ],
     tap: [B({ body: { bob: 1, squash: 1.2, limbs: 'rest' }, expr: 'closed', mouth: 'grin' }), B({ body: { bob: -1, squash: -1, limbs: 'up' }, expr: 'happy', mouth: 'grin' })],
     levelup: [

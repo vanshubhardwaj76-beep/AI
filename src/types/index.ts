@@ -68,6 +68,9 @@ export interface GoalCompletion {
   completedAt: string;
   xpAwarded: number;
   energyAwarded: number;
+  coinsAwarded?: number;
+  /** reward ledger transaction created for this completion */
+  transactionId?: string;
 }
 
 // ---------- Journal ----------
@@ -96,14 +99,42 @@ export interface MoodEntry {
 }
 
 // ---------- Adventures ----------
+/**
+ * Adventure lifecycle. Every transition is timestamp driven so the state can be
+ * recomputed from storage at any time (app closed, phone restarted, etc.):
+ *   idle → on_adventure (startedAt..endsAt) → returned (awaiting the welcome-home
+ *   sequence) → resting (restStartedAt..restEndsAt) → idle
+ */
+export type AdventurePhase = 'idle' | 'on_adventure' | 'returned' | 'resting';
+
 export interface AdventureRun {
   id: string;
   locationId: string;
   startedAt: string;
   endsAt: string;
+  /** Set the moment the adventure completes and rewards are generated (exactly once). */
+  completedAt: string | null;
+  /** Set once the user has watched the welcome-home sequence. */
+  seenAt: string | null;
+  restStartedAt: string | null;
+  restEndsAt: string | null;
+  /** @deprecated kept for old records; equals Boolean(completedAt) */
   claimed: boolean;
-  /** result is set when claimed */
   result: AdventureResult | null;
+}
+
+export type DiscoveryKind = 'coins' | 'item' | 'collectible' | 'curio' | 'story' | 'creature' | 'landmark';
+
+export interface Discovery {
+  id: string;
+  kind: DiscoveryKind;
+  name: string;
+  description: string;
+  rarity: 'common' | 'uncommon' | 'rare';
+  icon: IconName;
+  color: string;
+  /** coins for kind=coins, itemId for item/collectible */
+  value?: number | string;
 }
 
 export interface AdventureResult {
@@ -112,6 +143,33 @@ export interface AdventureResult {
   itemIds: string[];
   story: string;
   collectibleId: string | null;
+  discoveries: Discovery[];
+  /** id of the reward transaction that granted these rewards */
+  transactionId?: string;
+}
+
+// ---------- Rewards ledger ----------
+export type RewardSource = 'goal' | 'adventure' | 'activity' | 'journal' | 'mood' | 'levelup';
+
+/**
+ * Every grant of XP / energy / coins is recorded as a transaction so it can be
+ * reversed exactly (e.g. when a goal completion is undone). `refId` links the
+ * transaction to the thing that produced it (completion id, run id...).
+ */
+export interface RewardTransaction {
+  id: string;
+  source: RewardSource;
+  refId: string;
+  goalId?: string;
+  completionDate?: string;
+  xp: number;
+  energy: number;
+  coins: number;
+  friendship: number;
+  streakBonus: number;
+  itemIds: string[];
+  createdAt: string;
+  reversedAt: string | null;
 }
 
 // ---------- Inventory / Items ----------

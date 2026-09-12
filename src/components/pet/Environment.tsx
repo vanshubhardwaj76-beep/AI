@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 /**
  * Illustrated 2D environments. Each scene is built from three depth layers
@@ -15,26 +15,45 @@ interface Props {
   size: number;
   radius?: number;
   animated?: boolean;
+  /**
+   * Travelling mode: layers scroll right→left in a seamless loop with true
+   * parallax (far slow, mid medium, foreground fast). The pet stays put.
+   */
+  scroll?: boolean;
   children?: React.ReactNode;
 }
 
-export function Environment({ id, size, radius = 36, animated = true, children }: Props) {
+const SCROLL_MS = { far: 34000, mid: 16000, near: 7500 };
+
+export function Environment({ id, size, radius = 36, animated = true, scroll = false, children }: Props) {
   const drift = useSharedValue(0);
   const rise = useSharedValue(0);
+  const sFar = useSharedValue(0);
+  const sMid = useSharedValue(0);
+  const sNear = useSharedValue(0);
   useEffect(() => {
     if (!animated) return;
-    drift.value = withRepeat(withSequence(withTiming(1, { duration: 6000, easing: Easing.inOut(Easing.sin) }), withTiming(0, { duration: 6000, easing: Easing.inOut(Easing.sin) })), -1);
     rise.value = withRepeat(withTiming(1, { duration: 9000, easing: Easing.linear }), -1);
-  }, [animated, drift, rise]);
-  const far = useAnimatedStyle(() => ({ transform: [{ translateX: (drift.value - 0.5) * size * 0.015 }] }));
-  const mid = useAnimatedStyle(() => ({ transform: [{ translateX: (drift.value - 0.5) * size * 0.035 }] }));
-  const near = useAnimatedStyle(() => ({ transform: [{ translateX: (drift.value - 0.5) * -size * 0.05 }] }));
+    if (scroll) {
+      // linear 0→1 loops; each layer wraps at exactly one tile width so the seam is invisible
+      sFar.value = withRepeat(withTiming(1, { duration: SCROLL_MS.far, easing: Easing.linear }), -1);
+      sMid.value = withRepeat(withTiming(1, { duration: SCROLL_MS.mid, easing: Easing.linear }), -1);
+      sNear.value = withRepeat(withTiming(1, { duration: SCROLL_MS.near, easing: Easing.linear }), -1);
+    } else {
+      drift.value = withRepeat(withSequence(withTiming(1, { duration: 6000, easing: Easing.inOut(Easing.sin) }), withTiming(0, { duration: 6000, easing: Easing.inOut(Easing.sin) })), -1);
+    }
+    return () => { cancelAnimation(sFar); cancelAnimation(sMid); cancelAnimation(sNear); cancelAnimation(drift); cancelAnimation(rise); };
+  }, [animated, scroll, drift, rise, sFar, sMid, sNear]);
+  const far = useAnimatedStyle(() => ({ transform: [{ translateX: scroll ? -sFar.value * size : (drift.value - 0.5) * size * 0.015 }] }));
+  const mid = useAnimatedStyle(() => ({ transform: [{ translateX: scroll ? -sMid.value * size : (drift.value - 0.5) * size * 0.035 }] }));
+  const near = useAnimatedStyle(() => ({ transform: [{ translateX: scroll ? -sNear.value * size : (drift.value - 0.5) * -size * 0.05 }] }));
   const particles = useAnimatedStyle(() => ({ transform: [{ translateY: -rise.value * size * 0.5 }], opacity: 1 - Math.abs(rise.value - 0.5) * 1.2 }));
 
   const scene = SCENES[id] ?? SCENES.env_bedroom;
   const L = (node: React.ReactNode, style: any, key: string) => (
-    <Animated.View key={key} style={[StyleSheet.absoluteFill, style]} pointerEvents="none">
+    <Animated.View key={key} style={[StyleSheet.absoluteFill, scroll ? { width: size * 2, flexDirection: 'row' } : null, style]} pointerEvents="none">
       <Svg width={size} height={size} viewBox="0 0 200 200">{node}</Svg>
+      {scroll ? <Svg width={size} height={size} viewBox="0 0 200 200">{node}</Svg> : null}
     </Animated.View>
   );
 

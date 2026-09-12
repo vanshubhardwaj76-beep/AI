@@ -4,6 +4,7 @@ import { getDatabase } from '@/database';
 import { uid } from '@/utils/id';
 import { todayKey } from '@/utils/date';
 import { usePetStore } from './petStore';
+import { useRewardStore } from './rewardStore';
 
 interface MoodState {
   entries: MoodEntry[];
@@ -36,9 +37,8 @@ export const useMoodStore = create<MoodState>((set, get) => ({
     const db = await getDatabase();
     await db.collection<MoodEntry>('moods').put(entry);
     if (!existing) {
-      const pet = usePetStore.getState();
-      await pet.gainXp(5, 5);
-      pet.triggerAnim('wave');
+      await useRewardStore.getState().grant({ source: 'mood', refId: entry.id, xp: 5, energy: 5, friendship: 1 });
+      usePetStore.getState().triggerAnim('wave');
     }
     return entry;
   },

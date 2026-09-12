@@ -6,6 +6,7 @@ import { todayKey } from '@/utils/date';
 import { goalStreak, isGoalScheduledOn, overallStreak } from '@/utils/streaks';
 import { rewardsFor } from '@/utils/leveling';
 import { usePetStore } from './petStore';
+import { useRewardStore } from './rewardStore';
 import { useProfileStore } from './profileStore';
 import { COMPLETION_CHEERS } from '@/data/prompts';
 
@@ -108,14 +109,22 @@ export const useGoalStore = create<GoalState>((set, get) => ({
       completedAt: new Date().toISOString(),
       xpAwarded: reward.xp,
       energyAwarded: reward.energy,
+      coinsAwarded: reward.coins,
     };
     set({ completions: [...get().completions, completion] });
     const db = await getDatabase();
     await db.collection<GoalCompletion>('completions').put(completion);
 
+    // Rewards go through the ledger: one transaction per completion, reversible on undo.
+    const { tx, leveledUp, level } = await useRewardStore.getState().grant({
+      source: 'goal', refId: completion.id, goalId: id, completionDate: date,
+      xp: reward.xp, energy: reward.energy, coins: reward.coins, friendship: 1, streakBonus: reward.streakBonus,
+    });
+    const withTx = { ...completion, transactionId: tx.id };
+    set({ completions: get().completions.map((c) => (c.id === completion.id ? withTx : c)) });
+    await db.collection<GoalCompletion>('completions').put(withTx);
+
     const petStore = usePetStore.getState();
-    const { leveledUp, level } = await petStore.gainXp(reward.xp, reward.energy);
-    await useProfileStore.getState().addCoins(reward.coins);
     petStore.triggerAnim(leveledUp ? 'levelup' : 'jump');
     petStore.showReaction(
       leveledUp
@@ -131,7 +140,20 @@ export const useGoalStore = create<GoalState>((set, get) => ({
     set({ completions: get().completions.filter((x) => x.id !== c.id) });
     const db = await getDatabase();
     await db.collection<GoalCompletion>('completions').remove(c.id);
-    await usePetStore.getState().loseXp(c.xpAwarded, c.energyAwarded);
+    // Reverse exactly the transaction created for THIS completion (and nothing else).
+    const ledger = useRewardStore.getState();
+    const reversed = c.transactionId ? await ledger.reverse(c.transactionId) : false;
+    if (!reversed) {
+      const n = await ledger.reverseByRef('goal', c.id);
+      // Legacy completions (before the ledger existed) stored their own xp/energy;
+      // coins were the difficulty's base amount (never streak-dependent).
+      if (n === 0) {
+        const legacyGoal = get().goals.find((g) => g.id === id);
+        const coins = c.coinsAwarded ?? (legacyGoal ? rewardsFor(legacyGoal.difficulty, 1).coins : 0);
+        await usePetStore.getState().loseXp(c.xpAwarded, c.energyAwarded, 0);
+        if (coins) await useProfileStore.getState().addCoins(-coins);
+      }
+    }
   },
 
   todaysGoals: () => {

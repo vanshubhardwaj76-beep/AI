@@ -5,7 +5,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { Pet, PetMood, PetSpecies } from '@/types';
 import { PixelSprite } from '@/engine/PixelSprite';
-import { getPetSheet, type Pose } from '@/engine/pets';
+import { getPetSheet, STATE_POSE, type PetAnimState, type Pose } from '@/engine/pets';
 import { accessorySprite } from '@/engine/accessories';
 import type { Sprite } from '@/engine/sprite';
 import { usePetStore } from '@/store/petStore';
@@ -23,6 +23,15 @@ interface Props {
   onPet?: () => void;
   /** Force a pose (e.g. previews). */
   pose?: Pose;
+  /**
+   * High-level animation state. Drives the sprite pose AND the container
+   * motion (walk bounce, sleep breathing, happy wiggle…). Reused by every
+   * screen instead of bespoke pet animations.
+   */
+  state?: PetAnimState;
+  /** Travelling scene: environment layers scroll with parallax while the pet walks in place. */
+  scrollEnvironment?: boolean;
+  environmentId?: string;
 }
 
 const MOOD_POSE: Record<PetMood, Pose> = { happy: 'idle', excited: 'excited', sleepy: 'sleepy', curious: 'curious', proud: 'proud', calm: 'calm', tired: 'tired' };
@@ -36,7 +45,7 @@ const MOOD_POSE: Record<PetMood, Pose> = { happy: 'idle', excited: 'excited', sl
  *  - levelup: big hop, level-up frames, star burst
  *  - sleep: sleepy frames
  */
-export function PetAvatar({ pet, species, mood, size = 240, showEnvironment = true, interactive = true, onPet, pose: forcedPose }: Props) {
+export function PetAvatar({ pet, species, mood, size = 240, showEnvironment = true, interactive = true, onPet, pose: forcedPose, state, scrollEnvironment = false, environmentId }: Props) {
   const sp = pet?.species ?? species ?? 'bird';
   const md = pet?.mood ?? mood ?? 'happy';
   const trigger = usePetStore((s) => s.animTrigger);
@@ -52,12 +61,13 @@ export function PetAvatar({ pet, species, mood, size = 240, showEnvironment = tr
   const jump = useSharedValue(0);
   const squash = useSharedValue(1);
 
-  const basePose: Pose = forcedPose ?? MOOD_POSE[md];
+  const basePose: Pose = forcedPose ?? (state ? STATE_POSE[state] : MOOD_POSE[md]);
   const pose = override && override.until > Date.now() ? override.pose : basePose;
+  const asleep = pose === 'sleepy' || pose === 'resting';
 
-  // frame ticker (breathing) – speed depends on pose
+  // frame ticker (breathing / stride) – speed depends on pose
   useEffect(() => {
-    const speed = pose === 'sleepy' || pose === 'tired' ? 1100 : pose === 'excited' || pose === 'levelup' || pose === 'tap' ? 220 : 700;
+    const speed = asleep || pose === 'tired' ? 1300 : pose === 'walking' ? 170 : pose === 'excited' || pose === 'levelup' || pose === 'tap' ? 220 : 700;
     const id = setInterval(() => setTick((t) => t + 1), speed);
     return () => clearInterval(id);
   }, [pose]);
@@ -78,12 +88,36 @@ export function PetAvatar({ pet, species, mood, size = 240, showEnvironment = tr
     return () => { alive = false; clearTimeout(t); };
   }, []);
 
-  // container breathing bob
+  // container motion per state: breathing bob (idle/sleep), walk bounce, happy wiggle
   useEffect(() => {
-    const dur = md === 'sleepy' || md === 'tired' ? 2600 : md === 'excited' ? 1200 : 1900;
+    cancelAnimation(bob);
+    // cleanup for looping states resets the transforms so one-shot reactions start clean
+    const loopCleanup = () => { cancelAnimation(bob); cancelAnimation(tilt); cancelAnimation(squash); tilt.value = withTiming(0, { duration: 120 }); squash.value = withTiming(1, { duration: 120 }); };
+    if (pose === 'walking') {
+      // quick bounce synced to the stride + tiny sway of the whole body
+      bob.value = withRepeat(withSequence(withTiming(-size * 0.02, { duration: 170, easing: Easing.out(Easing.quad) }), withTiming(0, { duration: 170, easing: Easing.in(Easing.quad) })), -1);
+      tilt.value = withRepeat(withSequence(withTiming(-2.5, { duration: 340, easing: Easing.inOut(Easing.sin) }), withTiming(2.5, { duration: 340, easing: Easing.inOut(Easing.sin) })), -1);
+      return loopCleanup;
+    }
+    if (asleep) {
+      // slow deep breathing: subtle vertical rise + gentle widen
+      bob.value = withRepeat(withSequence(withTiming(-size * 0.006, { duration: 2200, easing: Easing.inOut(Easing.sin) }), withTiming(0, { duration: 2200, easing: Easing.inOut(Easing.sin) })), -1);
+      squash.value = withRepeat(withSequence(withTiming(0.985, { duration: 2200, easing: Easing.inOut(Easing.sin) }), withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.sin) })), -1);
+      return loopCleanup;
+    }
+    if (pose === 'happy' && state === 'HAPPY') {
+      tilt.value = withRepeat(withSequence(withTiming(-4, { duration: 260, easing: Easing.inOut(Easing.sin) }), withTiming(4, { duration: 260, easing: Easing.inOut(Easing.sin) })), -1);
+      bob.value = withRepeat(withSequence(withTiming(-size * 0.012, { duration: 1200, easing: Easing.inOut(Easing.quad) }), withTiming(0, { duration: 1200, easing: Easing.inOut(Easing.quad) })), -1);
+      return loopCleanup;
+    }
+    if (pose === 'excited' && state === 'EXCITED') {
+      bob.value = withRepeat(withSequence(withTiming(-size * 0.05, { duration: 260, easing: Easing.out(Easing.quad) }), withTiming(0, { duration: 260, easing: Easing.bounce })), -1);
+      return loopCleanup;
+    }
+    const dur = pose === 'tired' ? 2600 : pose === 'excited' ? 1200 : 1900;
     bob.value = withRepeat(withSequence(withTiming(-size * 0.012, { duration: dur, easing: Easing.inOut(Easing.quad) }), withTiming(0, { duration: dur, easing: Easing.inOut(Easing.quad) })), -1);
     return () => cancelAnimation(bob);
-  }, [md, bob, size]);
+  }, [pose, asleep, state, bob, tilt, squash, size]);
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const later = (fn: () => void, ms: number) => timers.current.push(setTimeout(fn, ms));
@@ -120,7 +154,7 @@ export function PetAvatar({ pet, species, mood, size = 240, showEnvironment = tr
   }, [trigger, tilt, jump, squash, size]);
 
   const handlePress = () => {
-    if (!interactive) return;
+    if (!interactive || asleep || pose === 'walking') return;
     haptic.medium();
     play('tap', 700);
     squash.value = withSequence(withTiming(0.82, { duration: 80 }), withTiming(1.08, { duration: 160 }), withSpring(1, { damping: 8 }));
@@ -153,10 +187,10 @@ export function PetAvatar({ pet, species, mood, size = 240, showEnvironment = tr
   );
 
   return (
-    <Pressable onPress={handlePress} accessibilityRole="imagebutton" accessibilityLabel={`${pet?.name ?? 'Your pet'}, ${md}`} disabled={!interactive}>
+    <Pressable onPress={handlePress} accessibilityRole="imagebutton" accessibilityLabel={`${pet?.name ?? 'Your pet'}, ${asleep ? 'sleeping' : pose === 'walking' ? 'walking' : md}`} disabled={!interactive}>
       <View style={[styles.wrap, { width: size, height: size }]}>
         {showEnvironment ? (
-          <Environment id={pet?.environmentId ?? 'env_bedroom'} size={size}>
+          <Environment id={environmentId ?? pet?.environmentId ?? 'env_bedroom'} size={size} scroll={scrollEnvironment}>
             <View style={{ marginBottom: size * 0.08 }}>{body}</View>
           </Environment>
         ) : (

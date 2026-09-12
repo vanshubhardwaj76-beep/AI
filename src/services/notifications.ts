@@ -80,12 +80,16 @@ export const notificationService = {
     }
   },
 
-  async notifyAdventureDone(petName: string, minutes: number) {
+  /** Schedule the "back home" notification for the real end time of the adventure. */
+  async notifyAdventureDone(petName: string, minutesOrEndsAt: number | string) {
     const N = await getModule();
     if (!N) return;
+    const seconds = typeof minutesOrEndsAt === 'string'
+      ? Math.round((new Date(minutesOrEndsAt).getTime() - Date.now()) / 1000)
+      : minutesOrEndsAt * 60;
     await N.scheduleNotificationAsync({
       content: { title: `${petName} is back!`, body: 'Come see what they found on their adventure.' },
-      trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: Math.max(5, minutes * 60) },
+      trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: Math.max(5, seconds) },
     });
   },
 };

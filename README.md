@@ -15,7 +15,8 @@ All branding, characters, artwork (procedural SVG), copy, and sounds are origina
 | Goals | Create / edit / delete / pause / complete / undo. Name, description, category, frequency (daily / weekly / specific days), reminder time, difficulty, icon, colour, per-goal streaks. Full validation. |
 | Rewards | XP + energy + coins per completion, streak bonus (capped so missing a day is never punishing), reward popup, level-up celebration, synthesised UI sounds. |
 | Pet | Mood (happy / excited / sleepy / curious / proud / calm / tired) computed from context, friendship, XP, level titles, rename. |
-| Adventures | 7 original locations (forest, beach, cloud peaks, moonlit garden, lantern village, mossy ruins, star station) with energy cost, real-time timers that survive app restarts, random stories, coins, item drops, collectibles. |
+| Adventures | 7 original locations with a timestamp-based state machine `IDLE → ON_ADVENTURE (6–8 h) → RETURNED → RESTING (2–4 h) → IDLE` that survives restarts. While away the pet is *gone* from home (away card with destination, countdown, progress); the adventure screen shows the pet walking in place over a seamless parallax-scrolling scene; on return a welcome-home sequence reveals random discoveries (common / uncommon / rare curios, coins, items, collectibles) and one of many original per-location stories; then the pet sleeps at home until rest ends. |
+| Reward ledger | Every XP / energy / coin / friendship grant is a persisted `reward_transactions` record (source, refId, goalId, completionDate, streakBonus…). Undoing a goal reverses *exactly* its own transaction; grants are idempotent per refId, so restarts and double-taps never duplicate rewards. |
 | Customisation | Hats, glasses, scarves, jackets, backpacks, toys, companions and 5 environments — drawn as SVG layers on the pet. Coin shop + level gating + adventure-only drops. |
 | Journal | Daily / gratitude / mood / free entries with prompts, create / edit / delete / search / filter / by-date. |
 | Mood check-in | 5-point check-in, supportive response, suggested activity, 14-day chart + calendar history. |
@@ -108,6 +109,10 @@ store actions so they are testable without React.
 
 **Design language:** warm cream / peach / mint palette, rounded cards, large type, spring animations via
 Reanimated, accessible labels on every interactive element, light and dark themes.
+
+## Pet animation states
+
+`PetAvatar` takes a `state` prop (`HOME_IDLE | WALKING | HAPPY | EXCITED | SLEEPING | RESTING | CURIOUS | PROUD | TIRED`). Each state maps to a procedurally-built pixel pose (see `src/engine/pets.ts`, incl. a 4-frame walk cycle and closed-eye rest frames) plus container motion (walk bounce/sway, slow breathing, wiggle). `Environment` has a `scroll` mode for the travelling scene (far/mid/near layers loop right→left at different speeds).
 
 ## Notes
 

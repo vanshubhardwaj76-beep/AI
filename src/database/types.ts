@@ -30,6 +30,7 @@ export interface StorageBackend {
 export const COLLECTIONS = [
   'goals',
   'completions',
+  'reward_transactions',
   'journal',
   'moods',
   'adventures',

@@ -28,7 +28,7 @@ export function rewardsFor(difficulty: GoalDifficulty, streak: number) {
   const base = DIFFICULTY_REWARDS[difficulty];
   // gentle streak bonus, capped so it never feels punishing to lose
   const bonus = Math.min(5, Math.floor(streak / 3));
-  return { xp: base.xp + bonus, energy: base.energy, coins: base.coins };
+  return { xp: base.xp + bonus, energy: base.energy, coins: base.coins, streakBonus: bonus };
 }
 
 export function levelTitle(level: number): string {

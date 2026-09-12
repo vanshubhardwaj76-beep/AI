@@ -5,6 +5,7 @@ import { uid } from '@/utils/id';
 import { todayKey } from '@/utils/date';
 import { activityById } from '@/data/activities';
 import { usePetStore } from './petStore';
+import { useRewardStore } from './rewardStore';
 
 interface ActivityState {
   logs: ActivityLog[];
@@ -26,8 +27,8 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
     set({ logs: [...get().logs, log] });
     const db = await getDatabase();
     await db.collection<ActivityLog>('activity_logs').put(log);
+    const { leveledUp, level } = await useRewardStore.getState().grant({ source: 'activity', refId: log.id, xp: act.xp, energy: act.energy, friendship: 1 });
     const pet = usePetStore.getState();
-    const { leveledUp, level } = await pet.gainXp(act.xp, act.energy);
     pet.triggerAnim(leveledUp ? 'levelup' : 'jump');
     pet.showReaction(
       leveledUp

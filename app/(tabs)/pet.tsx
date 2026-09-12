@@ -44,7 +44,10 @@ export default function PetScreen() {
   const has = useInventoryStore((s) => s.has);
   const buy = useInventoryStore((s) => s.buy);
   const coins = useProfileStore((s) => s.profile?.coins ?? 0);
-  const activeRun = useAdventureStore((s) => s.active());
+  useAdventureStore((s) => s.tick);
+  const phase = useAdventureStore((s) => s.phase());
+  const activeRun = phase !== 'idle';
+  const away = phase === 'on_adventure' || phase === 'returned';
   const [slot, setSlot] = useState<(typeof SLOTS)[number]['id']>('hat');
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState('');
@@ -92,10 +95,11 @@ export default function PetScreen() {
       </View>
 
       <View style={[styles.stage, shadows.card, { width: stageSize, alignSelf: 'center' }]}>
-        <PetAvatar pet={pet} size={stageSize} />
+        {/* Wardrobe preview: while away this is a mannequin-style preview, not the pet at home */}
+        <PetAvatar pet={pet} size={stageSize} state={away ? 'WALKING' : phase === 'resting' ? 'SLEEPING' : undefined} interactive={!activeRun} />
         <View style={[styles.moodTag, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Icon name={MOOD_ICON[pet.mood]} size={14} color={colors.primary} />
-          <Text variant="caption" style={{ marginLeft: 5, fontFamily: 'Nunito_700Bold' }}>{MOOD_LABEL[pet.mood]}</Text>
+          <Icon name={away ? 'compass' : phase === 'resting' ? 'moon' : MOOD_ICON[pet.mood]} size={14} color={colors.primary} />
+          <Text variant="caption" style={{ marginLeft: 5, fontFamily: 'Nunito_700Bold' }}>{away ? 'Away (preview)' : phase === 'resting' ? 'Resting' : MOOD_LABEL[pet.mood]}</Text>
         </View>
       </View>
 
@@ -105,7 +109,7 @@ export default function PetScreen() {
         <Row icon="friendship" label="Friendship" right={`${pet.friendship}%`} value={pet.friendship / 100} color="#F5A3B5" last />
       </Card>
 
-      <Button title={activeRun ? 'Check on adventure' : 'Go on an adventure'} icon="compass" fullWidth size="lg" onPress={() => router.push('/adventure')} style={{ marginTop: spacing.md }} />
+      <Button title={away ? 'Check on adventure' : phase === 'resting' ? 'Resting after adventure' : 'Go on an adventure'} icon="compass" fullWidth size="lg" onPress={() => router.push('/adventure')} style={{ marginTop: spacing.md }} />
 
       <Text variant="heading" style={styles.section}>Wardrobe & places</Text>
       <View style={styles.slotRow}>

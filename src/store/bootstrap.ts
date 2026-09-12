@@ -9,6 +9,7 @@ import { useInventoryStore } from './inventoryStore';
 import { useAdventureStore } from './adventureStore';
 import { useActivityStore } from './activityStore';
 import { useFriendStore } from './friendStore';
+import { useRewardStore } from './rewardStore';
 
 /** Load every store from persistent storage. Safe to call multiple times. */
 export async function bootstrapStores() {
@@ -17,14 +18,16 @@ export async function bootstrapStores() {
     useSettingsStore.getState().load(),
     useProfileStore.getState().load(),
     usePetStore.getState().load(),
+    useRewardStore.getState().load(),
     useGoalStore.getState().load(),
     useJournalStore.getState().load(),
     useMoodStore.getState().load(),
     useInventoryStore.getState().load(),
-    useAdventureStore.getState().load(),
     useActivityStore.getState().load(),
     useFriendStore.getState().load(),
   ]);
+  // Adventures last: sync() may grant rewards, which needs pet/profile/inventory/ledger loaded.
+  await useAdventureStore.getState().load();
 }
 
 /** Wipe all local data (used by "Delete account / Reset data"). */
@@ -42,6 +45,7 @@ export async function resetAllData() {
     useAdventureStore.getState().reset(),
     useActivityStore.getState().reset(),
     useFriendStore.getState().reset(),
+    useRewardStore.getState().reset(),
   ]);
   await useInventoryStore.getState().load();
 }

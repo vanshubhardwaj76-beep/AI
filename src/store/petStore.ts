@@ -28,8 +28,8 @@ interface PetState {
   save: (patch: Partial<Pet>) => Promise<void>;
   rename: (name: string) => Promise<void>;
   /** returns whether a level-up happened */
-  gainXp: (xp: number, energy?: number) => Promise<{ leveledUp: boolean; level: number }>;
-  loseXp: (xp: number, energy?: number) => Promise<void>;
+  gainXp: (xp: number, energy?: number, friendship?: number) => Promise<{ leveledUp: boolean; level: number; applied: { xp: number; energy: number; friendship: number } }>;
+  loseXp: (xp: number, energy?: number, friendship?: number) => Promise<void>;
   spendEnergy: (n: number) => Promise<boolean>;
   bumpFriendship: (n: number) => Promise<void>;
   setMood: (mood: PetMood) => void;
@@ -87,28 +87,23 @@ export const usePetStore = create<PetState>((set, get) => ({
 
   rename: (name) => get().save({ name: name.trim() }),
 
-  gainXp: async (xp, energy = 0) => {
+  gainXp: async (xp, energy = 0, friendship = 0) => {
     const cur = get().pet;
-    if (!cur) return { leveledUp: false, level: 1 };
-    const totalXp = cur.xp + xp;
+    if (!cur) return { leveledUp: false, level: 1, applied: { xp: 0, energy: 0, friendship: 0 } };
+    const totalXp = Math.max(0, cur.xp + xp);
     const { level } = levelFromXp(totalXp);
     const leveledUp = level > cur.level;
-    await get().save({
-      xp: totalXp,
-      level,
-      energy: Math.min(MAX_ENERGY, cur.energy + energy),
-      friendship: Math.min(100, cur.friendship + 1),
-    });
-    set({ lastCompleteAt: Date.now(), ...(leveledUp ? { lastLevelUpAt: Date.now() } : {}) });
-    return { leveledUp, level };
+    const nextEnergy = Math.max(0, Math.min(MAX_ENERGY, cur.energy + energy));
+    const nextFriendship = Math.max(0, Math.min(100, cur.friendship + friendship));
+    await get().save({ xp: totalXp, level, energy: nextEnergy, friendship: nextFriendship });
+    if (xp > 0) set({ lastCompleteAt: Date.now(), ...(leveledUp ? { lastLevelUpAt: Date.now() } : {}) });
+    // Report what was actually applied (clamping may reduce it) so the ledger can reverse exactly.
+    return { leveledUp, level, applied: { xp: totalXp - cur.xp, energy: nextEnergy - cur.energy, friendship: nextFriendship - cur.friendship } };
   },
 
-  loseXp: async (xp, energy = 0) => {
-    const cur = get().pet;
-    if (!cur) return;
-    const totalXp = Math.max(0, cur.xp - xp);
-    const { level } = levelFromXp(totalXp);
-    await get().save({ xp: totalXp, level, energy: Math.max(0, cur.energy - energy) });
+  /** Exact inverse of gainXp (used by the reward ledger when a transaction is reversed). */
+  loseXp: async (xp, energy = 0, friendship = 0) => {
+    await get().gainXp(-xp, -energy, -friendship);
   },
 
   spendEnergy: async (n) => {

@@ -4,6 +4,7 @@ import { getDatabase } from '@/database';
 import { uid } from '@/utils/id';
 import { todayKey } from '@/utils/date';
 import { usePetStore } from './petStore';
+import { useRewardStore } from './rewardStore';
 
 interface JournalState {
   entries: JournalEntry[];
@@ -41,8 +42,8 @@ export const useJournalStore = create<JournalState>((set, get) => ({
     // small reward for reflecting (first entry per day)
     const firstToday = get().entries.filter((e) => e.date === entry.date).length === 1;
     if (firstToday) {
+      await useRewardStore.getState().grant({ source: 'journal', refId: entry.id, xp: 8, energy: 5, friendship: 1 });
       const pet = usePetStore.getState();
-      await pet.gainXp(8, 5);
       pet.triggerAnim('happy');
       pet.showReaction({ kind: 'activity', title: 'Thanks for sharing', subtitle: 'Journal entry saved', xp: 8, energy: 5 });
     }
