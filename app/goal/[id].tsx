@@ -21,7 +21,7 @@ export default function EditGoal() {
     return (
       <Screen>
         <Header title="Goal" back />
-        <EmptyState emoji="🍃" title="This goal is gone" actionLabel="Back" onAction={() => router.back()} />
+        <EmptyState icon="mindfulness" title="This goal is gone" actionLabel="Back" onAction={() => router.back()} />
       </Screen>
     );
   }
@@ -47,7 +47,7 @@ export default function EditGoal() {
       <Header title="Edit goal" back />
       <Card alt style={{ marginBottom: spacing.lg }}>
         <View style={styles.stats}>
-          <Stat label="Current streak" value={`🔥 ${streak}`} />
+          <Stat label="Current streak" value={`${streak} day${streak === 1 ? '' : 's'}`} />
           <Stat label="Times done" value={String(total)} />
           <Stat label="Status" value={goal.paused ? 'Paused' : 'Active'} />
         </View>

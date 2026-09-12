@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Text } from '@/components/ui/Text';
 import { MONTH_LABELS, WEEKDAY_SHORT, monthGrid, todayKey } from '@/utils/date';
@@ -36,9 +36,9 @@ export function MonthCalendar({ marks, selected, onSelect, onMonthChange }: Prop
   return (
     <View>
       <View style={styles.head}>
-        <Pressable onPress={() => shift(-1)} hitSlop={10} accessibilityLabel="Previous month"><Ionicons name="chevron-back" size={22} color={colors.text} /></Pressable>
+        <Pressable onPress={() => shift(-1)} hitSlop={10} accessibilityLabel="Previous month"><Icon name="back" size={22} /></Pressable>
         <Text variant="heading">{MONTH_LABELS[ym.m]} {ym.y}</Text>
-        <Pressable onPress={() => shift(1)} hitSlop={10} accessibilityLabel="Next month"><Ionicons name="chevron-forward" size={22} color={colors.text} /></Pressable>
+        <Pressable onPress={() => shift(1)} hitSlop={10} accessibilityLabel="Next month"><Icon name="forward" size={22} /></Pressable>
       </View>
       <View style={styles.week}>
         {WEEKDAY_SHORT.map((d, i) => <Text key={i} variant="caption" muted center style={styles.cell}>{d}</Text>)}

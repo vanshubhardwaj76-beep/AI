@@ -75,7 +75,7 @@ export default function ActivityPlayer() {
     return (
       <Screen>
         <Header title="Activity" back />
-        <EmptyState emoji="🍃" title="Activity not found" actionLabel="Back" onAction={() => router.back()} />
+        <EmptyState icon="mindfulness" title="Activity not found" actionLabel="Back" onAction={() => router.back()} />
       </Screen>
     );
   }

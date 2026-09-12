@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon, IconTile, resolveIconName } from "@/components/ui/Icon";
 import { Screen, Header, Text, Card } from '@/components/ui';
 import { ACTIVITIES, ACTIVITY_CATEGORIES } from '@/data/activities';
 import { useActivityStore } from '@/store/activityStore';
@@ -22,21 +22,21 @@ export default function ActivityLibrary() {
         <View key={cat.id} style={{ marginBottom: spacing.lg }}>
           <View style={styles.catHead}>
             <View style={[styles.catIcon, { backgroundColor: cat.color + '44' }]}>
-              <Ionicons name={cat.icon as any} size={18} color={cat.color} />
+              <Icon name={cat.icon} size={18} color={cat.color} />
             </View>
             <Text variant="heading">{cat.label}</Text>
           </View>
           {ACTIVITIES.filter((a) => a.category === cat.id).map((a) => (
             <Pressable key={a.id} onPress={() => router.push({ pathname: '/activity/[id]', params: { id: a.id } })} accessibilityRole="button">
               <Card style={styles.row}>
-                <Ionicons name={a.icon as any} size={24} color={cat.color} />
+                <IconTile name={resolveIconName(a.icon)} color={cat.color} size={44} />
                 <View style={{ flex: 1 }}>
                   <Text variant="bodyBold">{a.title}</Text>
                   <Text variant="caption" muted numberOfLines={2}>{a.description}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text variant="caption" muted>{Math.max(1, Math.round(a.durationSeconds / 60))} min</Text>
-                  {doneToday.has(a.id) ? <Ionicons name="checkmark-circle" size={20} color={colors.success} /> : <Text variant="caption" muted>+{a.xp} XP</Text>}
+                  {doneToday.has(a.id) ? <Icon name="check-circle" size={20} color={colors.success} /> : <Text variant="caption" muted>+{a.xp} XP</Text>}
                 </View>
               </Card>
             </Pressable>

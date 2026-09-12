@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View, Pressable, Switch } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import type { Goal, GoalCategory, GoalDifficulty, GoalFrequency } from '@/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { categoryColors, goalColorOptions, goalIconOptions, radius, spacing } from '@/theme';
@@ -25,7 +25,7 @@ export function GoalForm({ initial, onSubmit, onDelete, submitLabel = 'Save goal
   const [frequency, setFrequency] = useState<GoalFrequency>(initial?.frequency ?? 'daily');
   const [days, setDays] = useState<number[]>(initial?.days ?? [1, 2, 3, 4, 5]);
   const [difficulty, setDifficulty] = useState<GoalDifficulty>(initial?.difficulty ?? 'easy');
-  const [icon, setIcon] = useState(initial?.icon ?? 'sparkles');
+  const [icon, setIcon] = useState(initial?.icon ?? 'custom');
   const [color, setColor] = useState(initial?.color ?? goalColorOptions[0]);
   const [reminderOn, setReminderOn] = useState(Boolean(initial?.reminderTime));
   const [reminderTime, setReminderTime] = useState(initial?.reminderTime ?? '09:00');
@@ -70,7 +70,7 @@ export function GoalForm({ initial, onSubmit, onDelete, submitLabel = 'Save goal
           <Chip
             key={c.id}
             label={c.label}
-            emoji={c.emoji}
+            icon={c.icon}
             selected={category === c.id}
             color={categoryColors[c.id]}
             onPress={() => {
@@ -126,7 +126,7 @@ export function GoalForm({ initial, onSubmit, onDelete, submitLabel = 'Save goal
             onPress={() => setIcon(ic)}
             style={[styles.iconOpt, { backgroundColor: icon === ic ? color : colors.card, borderColor: icon === ic ? color : colors.border }]}
           >
-            <Ionicons name={ic as any} size={22} color={icon === ic ? '#2A1D12' : colors.text} />
+            <Icon name={ic} size={22} color={icon === ic ? '#2A1D12' : colors.text} />
           </Pressable>
         ))}
       </ScrollView>

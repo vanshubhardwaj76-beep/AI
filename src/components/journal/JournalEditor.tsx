@@ -1,3 +1,4 @@
+import type { IconName } from '@/components/ui/Icon';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { JournalEntry, JournalKind } from '@/types';
@@ -6,11 +7,11 @@ import { JOURNAL_PROMPTS } from '@/data/prompts';
 import { spacing } from '@/theme';
 import { useTheme } from '@/theme/ThemeProvider';
 
-const KINDS: { id: JournalKind; label: string; emoji: string }[] = [
-  { id: 'daily', label: 'Daily', emoji: '📓' },
-  { id: 'gratitude', label: 'Gratitude', emoji: '💛' },
-  { id: 'mood', label: 'Mood note', emoji: '🫶' },
-  { id: 'free', label: 'Thoughts', emoji: '💭' },
+const KINDS: { id: JournalKind; label: string; icon: IconName }[] = [
+  { id: 'daily', label: 'Daily', icon: 'journal' },
+  { id: 'gratitude', label: 'Gratitude', icon: 'heart' },
+  { id: 'mood', label: 'Mood note', icon: 'mood-good' },
+  { id: 'free', label: 'Thoughts', icon: 'cloud' },
 ];
 
 interface Props {
@@ -44,7 +45,7 @@ export function JournalEditor({ initial, initialPrompt, onSubmit, onDelete }: Pr
   return (
     <View>
       <View style={styles.kinds}>
-        {KINDS.map((k) => <Chip key={k.id} label={k.label} emoji={k.emoji} selected={kind === k.id} onPress={() => setKind(k.id)} />)}
+        {KINDS.map((k) => <Chip key={k.id} label={k.label} icon={k.icon} selected={kind === k.id} onPress={() => setKind(k.id)} />)}
       </View>
 
       <Text variant="label" muted style={{ marginBottom: spacing.sm }}>Need a nudge?</Text>

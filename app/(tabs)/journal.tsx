@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Screen, Header, Text, Card, Input, EmptyState, IconButton, Chip } from '@/components/ui';
+import { Screen, Header, Text, Card, Input, EmptyState, IconButton, Chip, Icon, IconTile } from '@/components/ui';
+import type { IconName } from '@/components/ui';
 import { useJournalStore } from '@/store/journalStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme';
@@ -9,11 +10,11 @@ import { formatLongDate } from '@/utils/date';
 import { JournalKind } from '@/types';
 import { JOURNAL_PROMPTS } from '@/data/prompts';
 
-const KIND_META: Record<JournalKind, { label: string; emoji: string }> = {
-  daily: { label: 'Daily', emoji: '📓' },
-  gratitude: { label: 'Gratitude', emoji: '💛' },
-  mood: { label: 'Mood note', emoji: '🫶' },
-  free: { label: 'Thoughts', emoji: '💭' },
+const KIND_META: Record<JournalKind, { label: string; icon: IconName; color: string }> = {
+  daily: { label: 'Daily', icon: 'journal', color: '#8EC5E8' },
+  gratitude: { label: 'Gratitude', icon: 'heart', color: '#F5A3B5' },
+  mood: { label: 'Mood note', icon: 'mood-good', color: '#F9DC7A' },
+  free: { label: 'Thoughts', icon: 'cloud', color: '#B8A9E8' },
 };
 
 export default function JournalScreen() {
@@ -44,7 +45,7 @@ export default function JournalScreen() {
         <Card tint={colors.primarySoft} style={{ marginBottom: spacing.lg }}>
           <Text variant="label" muted>Today's prompt</Text>
           <Text variant="heading" style={{ marginTop: 4 }}>{prompt}</Text>
-          <Text variant="caption" muted style={{ marginTop: 4 }}>Tap to answer →</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}><Text variant="caption" muted>Tap to answer</Text><Icon name="arrow-right" size={14} color={colors.textMuted} style={{ marginLeft: 4 }} /></View>
         </Card>
       </Pressable>
 
@@ -52,12 +53,12 @@ export default function JournalScreen() {
       <View style={styles.filters}>
         <Chip label="All" selected={kind === 'all'} onPress={() => setKind('all')} />
         {(Object.keys(KIND_META) as JournalKind[]).map((k) => (
-          <Chip key={k} label={KIND_META[k].label} emoji={KIND_META[k].emoji} selected={kind === k} onPress={() => setKind(k)} />
+          <Chip key={k} label={KIND_META[k].label} icon={KIND_META[k].icon} selected={kind === k} onPress={() => setKind(k)} />
         ))}
       </View>
 
       {grouped.length === 0 ? (
-        <EmptyState emoji="📝" title={q ? 'No matches' : 'Your journal is empty'} body={q ? 'Try a different word.' : 'A few honest lines a day can change how you feel.'} actionLabel={q ? undefined : 'Write your first entry'} onAction={() => router.push('/journal/new')} />
+        <EmptyState icon="journaling" title={q ? 'No matches' : 'Your journal is empty'} body={q ? 'Try a different word.' : 'A few honest lines a day can change how you feel.'} actionLabel={q ? undefined : 'Write your first entry'} onAction={() => router.push('/journal/new')} />
       ) : (
         grouped.map(([date, list]) => (
           <View key={date} style={{ marginBottom: spacing.md }}>
@@ -66,7 +67,7 @@ export default function JournalScreen() {
               <Pressable key={e.id} onPress={() => router.push({ pathname: '/journal/[id]', params: { id: e.id } })} accessibilityRole="button">
                 <Card style={{ marginBottom: spacing.sm }}>
                   <View style={styles.row}>
-                    <Text style={{ fontSize: 20 }}>{KIND_META[e.kind].emoji}</Text>
+                    <IconTile name={KIND_META[e.kind].icon} color={KIND_META[e.kind].color} size={34} />
                     <Text variant="bodyBold" style={{ flex: 1 }} numberOfLines={1}>{e.title || KIND_META[e.kind].label}</Text>
                   </View>
                   {e.prompt ? <Text variant="caption" color={colors.primary} style={{ marginTop: 4 }}>{e.prompt}</Text> : null}

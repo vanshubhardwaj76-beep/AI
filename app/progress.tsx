@@ -13,6 +13,7 @@ import { isGoalScheduledOn, longestStreak } from '@/utils/streaks';
 import { levelFromXp, levelTitle } from '@/utils/leveling';
 import { spacing } from '@/theme';
 import { useTheme } from '@/theme/ThemeProvider';
+import { Icon, IconTile, type IconName } from '@/components/ui/Icon';
 
 export default function ProgressScreen() {
   const { colors } = useTheme();
@@ -70,12 +71,12 @@ export default function ProgressScreen() {
     <Screen>
       <Header title="Progress" back subtitle="Small steps add up" />
       <View style={styles.grid}>
-        <Stat emoji="🔥" label="Current streak" value={`${streak} day${streak === 1 ? '' : 's'}`} />
-        <Stat emoji="🏆" label="Longest streak" value={`${longestStreak(completions)} days`} />
-        <Stat emoji="✅" label="Goals completed" value={String(completions.length)} />
-        <Stat emoji="📅" label="Active days" value={String(activeDays)} />
-        <Stat emoji="⭐" label={`Level ${lvl.level}`} value={levelTitle(lvl.level)} />
-        <Stat emoji="✨" label="Total XP" value={String(pet?.xp ?? 0)} />
+        <Stat icon="streak" color="#E76F51" label="Current streak" value={`${streak} day${streak === 1 ? '' : 's'}`} />
+        <Stat icon="trophy" color="#F4C24B" label="Longest streak" value={`${longestStreak(completions)} days`} />
+        <Stat icon="check-circle" color="#4FA98B" label="Goals completed" value={String(completions.length)} />
+        <Stat icon="calendar" color="#8EC5E8" label="Active days" value={String(activeDays)} />
+        <Stat icon="level" color="#F4A261" label={`Level ${lvl.level}`} value={levelTitle(lvl.level)} />
+        <Stat icon="xp" color="#B8A9E8" label="Total XP" value={String(pet?.xp ?? 0)} />
       </View>
 
       <Card style={{ marginTop: spacing.md }}>
@@ -113,17 +114,17 @@ export default function ProgressScreen() {
 
       <Card alt style={{ marginTop: spacing.md }}>
         <Text variant="heading" style={{ marginBottom: spacing.sm }}>Also this month</Text>
-        <Text muted>📝 {journal.filter((j) => fromDateKey(j.date) >= addDays(new Date(), -30)).length} journal entries</Text>
-        <Text muted>🌿 {activities.filter((a) => fromDateKey(a.date) >= addDays(new Date(), -30)).length} self-care activities</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}><Icon name="journaling" size={16} color="#F5A3B5" /><Text muted>{journal.filter((j) => fromDateKey(j.date) >= addDays(new Date(), -30)).length} journal entries</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Icon name="mindfulness" size={16} color="#4FA98B" /><Text muted>{activities.filter((a) => fromDateKey(a.date) >= addDays(new Date(), -30)).length} self-care activities</Text></View>
       </Card>
     </Screen>
   );
 }
 
-function Stat({ emoji, label, value }: { emoji: string; label: string; value: string }) {
+function Stat({ icon, color, label, value }: { icon: IconName; color: string; label: string; value: string }) {
   return (
     <Card style={styles.stat}>
-      <Text style={{ fontSize: 22 }}>{emoji}</Text>
+      <IconTile name={icon} color={color} size={36} />
       <Text variant="heading" style={{ marginTop: 4 }}>{value}</Text>
       <Text variant="caption" muted>{label}</Text>
     </Card>

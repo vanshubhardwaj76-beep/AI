@@ -2,20 +2,23 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInRight, FadeOutLeft } from 'react-native-reanimated';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Card, Chip, Input, Text } from '@/components/ui';
 import { PetAvatar } from '@/components/pet/PetAvatar';
+import { Environment } from '@/components/pet/Environment';
 import { SPECIES, speciesInfo } from '@/data/pets';
 import { CATEGORY_INFO, GOAL_TEMPLATES } from '@/data/goalTemplates';
 import type { GoalTemplate } from '@/data/goalTemplates';
 import { GoalCategory, PetSpecies } from '@/types';
 import { useTheme } from '@/theme/ThemeProvider';
-import { categoryColors, spacing, radius } from '@/theme';
+import { categoryColors, spacing, radius, shadows } from '@/theme';
+import { PixelSprite } from '@/engine/PixelSprite';
+import { getPetSheet } from '@/engine/pets';
 import { usePetStore } from '@/store/petStore';
 import { useProfileStore } from '@/store/profileStore';
 import { useGoalStore } from '@/store/goalStore';
 import { required } from '@/utils/validation';
+import { Icon } from '@/components/ui/Icon';
 
 const STEPS = ['welcome', 'pet', 'name', 'focus', 'improve', 'goals'] as const;
 type Step = (typeof STEPS)[number];
@@ -92,7 +95,7 @@ export default function Onboarding() {
         {step !== 'welcome' && (
           <View style={styles.topBar}>
             <Pressable onPress={back} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
-              <Text muted>← Back</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}><Icon name="back" size={18} color={colors.textMuted} /><Text muted>Back</Text></View>
             </Pressable>
             <View style={styles.dots}>
               {STEPS.slice(1).map((s, i) => (
@@ -126,7 +129,9 @@ export default function Onboarding() {
             <Text variant="title">Choose your companion</Text>
             <Text muted style={{ marginBottom: spacing.lg }}>You can always customise them later.</Text>
             <View style={styles.preview}>
-              <PetAvatar species={species} mood="happy" size={200} showEnvironment={false} interactive={false} />
+              <Environment id="env_forest" size={240} radius={30}>
+                <View style={{ marginBottom: 18 }}><PetAvatar species={species} mood="happy" size={160} showEnvironment={false} interactive={false} /></View>
+              </Environment>
             </View>
             <View style={styles.speciesGrid}>
               {SPECIES.map((s) => {
@@ -137,9 +142,9 @@ export default function Onboarding() {
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
                     onPress={() => setSpecies(s.id)}
-                    style={[styles.speciesCard, { backgroundColor: on ? s.bodyColor + '55' : colors.card, borderColor: on ? s.bodyColor : colors.border }]}
+                    style={({ pressed }) => [styles.speciesCard, { backgroundColor: on ? s.bodyColor + '33' : colors.card, borderColor: on ? s.bodyColor : colors.border, borderWidth: on ? 2 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] }]}
                   >
-                    <PetAvatar species={s.id} mood="calm" size={64} showEnvironment={false} interactive={false} />
+                    <PetAvatar species={s.id} mood="calm" size={72} showEnvironment={false} interactive={false} />
                     <Text variant="bodyBold" center style={{ marginTop: 6 }}>{s.name}</Text>
                     <Text variant="caption" muted center>{s.tagline}</Text>
                   </Pressable>
@@ -173,7 +178,7 @@ export default function Onboarding() {
                 <Chip
                   key={c.id}
                   label={c.label}
-                  emoji={c.emoji}
+                  icon={c.icon}
                   color={categoryColors[c.id]}
                   selected={focus.includes(c.id)}
                   onPress={() => setFocus(focus.includes(c.id) ? focus.filter((x) => x !== c.id) : [...focus, c.id])}
@@ -212,7 +217,7 @@ export default function Onboarding() {
                 >
                   <Card style={[styles.sugRow, on && { borderColor: categoryColors[t.category], borderWidth: 2 }]}>
                     <View style={[styles.checkbox, { borderColor: categoryColors[t.category], backgroundColor: on ? categoryColors[t.category] : 'transparent' }]}>
-                      {on && <Text style={{ color: '#2A1D12', fontWeight: '800' }}>✓</Text>}
+                      {on && <Icon name="check" size={16} color="#2A1D12" strokeWidth={3.2} />}
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text variant="bodyBold">{t.name}</Text>
@@ -232,17 +237,10 @@ export default function Onboarding() {
 
 function Logo() {
   return (
-    <Svg width={140} height={140} viewBox="0 0 100 100">
-      <Circle cx={50} cy={50} r={48} fill="#F4A261" />
-      <Circle cx={50} cy={56} r={30} fill="#FFE8CF" />
-      <Path d="M36 50 q4 -6 8 0" stroke="#4A3B32" strokeWidth={3} fill="none" strokeLinecap="round" />
-      <Path d="M56 50 q4 -6 8 0" stroke="#4A3B32" strokeWidth={3} fill="none" strokeLinecap="round" />
-      <Path d="M44 62 q6 6 12 0" stroke="#4A3B32" strokeWidth={3} fill="none" strokeLinecap="round" />
-      <Path d="M28 22 l6 -12 l6 12" stroke="#E76F51" strokeWidth={4} fill="none" strokeLinecap="round" />
-      <Path d="M60 20 l6 -10 l6 10" stroke="#E76F51" strokeWidth={4} fill="none" strokeLinecap="round" />
-      <Circle cx={30} cy={60} r={4} fill="#F5A3B5" opacity={0.7} />
-      <Circle cx={70} cy={60} r={4} fill="#F5A3B5" opacity={0.7} />
-    </Svg>
+    <View style={{ width: 150, height: 150, borderRadius: 48, backgroundColor: '#F4A261', alignItems: 'center', justifyContent: 'center', ...shadows.pop }}>
+      <View style={{ position: 'absolute', left: 8, right: 8, top: 6, height: 50, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.22)' }} />
+      <PixelSprite sprite={getPetSheet('bird').frames.happy[0]} size={120} />
+    </View>
   );
 }
 

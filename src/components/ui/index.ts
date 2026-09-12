@@ -9,4 +9,6 @@ export { Screen } from './Screen';
 export { Header } from './Header';
 export { Sheet } from './Sheet';
 export { EmptyState } from './EmptyState';
+export { Icon, IconTile } from './Icon';
+export type { IconName } from './Icon';
 export { ToastProvider, useToast } from './Toast';

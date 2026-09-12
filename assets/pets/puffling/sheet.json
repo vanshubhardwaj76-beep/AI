@@ -1,0 +1,79 @@
+{
+  "species": "bird",
+  "cell": 256,
+  "scale": 8,
+  "rows": [
+    {
+      "pose": "idle",
+      "frames": 3
+    },
+    {
+      "pose": "calm",
+      "frames": 2
+    },
+    {
+      "pose": "happy",
+      "frames": 2
+    },
+    {
+      "pose": "excited",
+      "frames": 2
+    },
+    {
+      "pose": "proud",
+      "frames": 2
+    },
+    {
+      "pose": "curious",
+      "frames": 2
+    },
+    {
+      "pose": "sleepy",
+      "frames": 2
+    },
+    {
+      "pose": "tired",
+      "frames": 2
+    },
+    {
+      "pose": "tap",
+      "frames": 2
+    },
+    {
+      "pose": "levelup",
+      "frames": 2
+    }
+  ],
+  "anchors": {
+    "hat": {
+      "x": 16,
+      "y": 3
+    },
+    "eyes": {
+      "x": 16,
+      "y": 12
+    },
+    "neck": {
+      "x": 16,
+      "y": 17
+    },
+    "back": {
+      "x": 7,
+      "y": 18
+    },
+    "ground": 29,
+    "headHalf": 8
+  },
+  "palette": {
+    "outline": "#3B2A26",
+    "body": "#F4A261",
+    "light": "#FFC58C",
+    "dark": "#D67A3E",
+    "belly": "#FFE9D0",
+    "bellyDark": "#F0CBA4",
+    "accent": "#E76F51",
+    "accentDark": "#BE4E36",
+    "eye": "#2B1D1A",
+    "blush": "#F28A8A"
+  }
+}

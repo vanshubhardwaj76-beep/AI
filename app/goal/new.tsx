@@ -15,7 +15,7 @@ export default function NewGoal() {
         submitLabel="Create goal"
         onSubmit={async (input) => {
           await add(input);
-          toast('Goal created 🌱', 'success');
+          toast('Goal created', 'success');
           router.back();
         }}
       />

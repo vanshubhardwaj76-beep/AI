@@ -20,7 +20,7 @@ interface PetState {
   pet: Pet | null;
   /** transient */
   reaction: Reaction | null;
-  animTrigger: { kind: 'happy' | 'jump' | 'sleep' | 'wave'; at: number } | null;
+  animTrigger: { kind: 'happy' | 'jump' | 'sleep' | 'wave' | 'levelup'; at: number } | null;
   lastLevelUpAt: number;
   lastCompleteAt: number;
   load: () => Promise<void>;
@@ -38,7 +38,7 @@ interface PetState {
   touch: () => Promise<void>;
   showReaction: (r: Omit<Reaction, 'id'>) => void;
   clearReaction: () => void;
-  triggerAnim: (kind: 'happy' | 'jump' | 'sleep' | 'wave') => void;
+  triggerAnim: (kind: 'happy' | 'jump' | 'sleep' | 'wave' | 'levelup') => void;
   reset: () => Promise<void>;
 }
 

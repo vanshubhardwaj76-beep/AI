@@ -33,7 +33,7 @@ export default function AuthScreen() {
     const r = mode === 'signup' ? await authService.signUpWithEmail(email, password) : await authService.signInWithEmail(email, password);
     setBusy(null);
     if (!r.ok) return toast(r.message ?? 'Something went wrong', 'error');
-    toast(r.message ?? 'Signed in 💛', 'success');
+    toast(r.message ?? 'Signed in', 'success');
     if (configured) {
       const pulled = await syncService.pull();
       if (!pulled.ok) await syncService.push();
@@ -81,7 +81,7 @@ export default function AuthScreen() {
         <Text variant="caption" muted>or</Text>
         <View style={[styles.line, { backgroundColor: colors.border }]} />
       </View>
-      <Button title="Continue with Google" icon="logo-google" variant="secondary" fullWidth size="lg" loading={busy === 'google'} onPress={async () => { setBusy('google'); const r = await authService.signInWithGoogle(); setBusy(null); if (!r.ok) return toast(r.message ?? 'Sign-in failed', 'error'); toast('Signed in with Google', 'success'); router.back(); }} />
+      <Button title="Continue with Google" icon="google" variant="secondary" fullWidth size="lg" loading={busy === 'google'} onPress={async () => { setBusy('google'); const r = await authService.signInWithGoogle(); setBusy(null); if (!r.ok) return toast(r.message ?? 'Sign-in failed', 'error'); toast('Signed in with Google', 'success'); router.back(); }} />
       <Button title="Continue as guest" variant="ghost" fullWidth onPress={() => router.back()} style={{ marginTop: spacing.sm }} />
     </Screen>
   );

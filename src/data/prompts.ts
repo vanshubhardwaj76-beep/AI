@@ -1,3 +1,4 @@
+import type { IconName } from '@/components/ui/Icon';
 export const JOURNAL_PROMPTS = [
   'What was one good thing about today?',
   "What's something you're looking forward to?",
@@ -9,12 +10,12 @@ export const JOURNAL_PROMPTS = [
   'Describe a small moment of peace you noticed.',
 ];
 
-export const MOOD_OPTIONS: { value: 1 | 2 | 3 | 4 | 5; label: string; emoji: string; color: string }[] = [
-  { value: 5, label: 'Great', emoji: '😀', color: '#8FD3B6' },
-  { value: 4, label: 'Good', emoji: '🙂', color: '#B7DDA3' },
-  { value: 3, label: 'Okay', emoji: '😐', color: '#F9DC7A' },
-  { value: 2, label: 'Not great', emoji: '😕', color: '#F4A261' },
-  { value: 1, label: 'Rough', emoji: '😢', color: '#B8A9E8' },
+export const MOOD_OPTIONS: { value: 1 | 2 | 3 | 4 | 5; label: string; icon: IconName; color: string }[] = [
+  { value: 5, label: 'Great', icon: 'mood-great', color: '#8FD3B6' },
+  { value: 4, label: 'Good', icon: 'mood-good', color: '#B7DDA3' },
+  { value: 3, label: 'Okay', icon: 'mood-okay', color: '#F9DC7A' },
+  { value: 2, label: 'Not great', icon: 'mood-low', color: '#F4A261' },
+  { value: 1, label: 'Rough', icon: 'mood-rough', color: '#B8A9E8' },
 ];
 
 export const MOOD_RESPONSES: Record<1 | 2 | 3 | 4 | 5, { message: string; suggestion: string; activityId: string }> = {
@@ -26,7 +27,7 @@ export const MOOD_RESPONSES: Record<1 | 2 | 3 | 4 | 5, { message: string; sugges
 };
 
 export const COMPLETION_CHEERS = [
-  'Nice work! ✨',
+  'Nice work!',
   'You did it!',
   'Look at you go!',
   'One step closer.',
@@ -38,6 +39,6 @@ export const ENCOURAGEMENTS = [
   "You've got this!",
   'Proud of you!',
   'Keep going, friend.',
-  'Sending good vibes ✨',
+  'Sending good vibes',
   'One step at a time.',
 ];

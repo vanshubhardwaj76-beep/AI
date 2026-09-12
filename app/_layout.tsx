@@ -16,6 +16,8 @@ import { useNotificationSync } from '@/hooks/useNotificationSync';
 import { useProfileStore } from '@/store/profileStore';
 import { usePetStore } from '@/store/petStore';
 import { lightColors } from '@/theme';
+import { useFonts, Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
+import { Icon } from '@/components/ui/Icon';
 
 export const unstable_settings = { initialRouteName: '(tabs)' };
 
@@ -47,7 +49,7 @@ function Gate({ children }: { children: React.ReactNode }) {
   if (error) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={{ fontSize: 40 }}>😿</Text>
+        <Icon name="cloud" size={44} color={colors.primary} />
         <Text variant="heading" center style={{ marginTop: 12 }}>Something went wrong</Text>
         <Text muted center style={{ marginVertical: 12 }}>{error}</Text>
         <Button title="Try again" onPress={() => router.replace('/')} />
@@ -93,10 +95,13 @@ function Navigator() {
 }
 
 export default function RootLayout() {
+  // Fonts load in the background; text falls back to the system font until
+  // Nunito is ready so the app never blocks on a font download.
+  const [fontsReady] = useFonts({ Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold });
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: lightColors.background }}>
       <SafeAreaProvider>
-        <ThemeProvider>
+        <ThemeProvider fontsReady={fontsReady}>
           <ToastProvider>
             <Navigator />
           </ToastProvider>

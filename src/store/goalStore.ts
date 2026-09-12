@@ -116,7 +116,7 @@ export const useGoalStore = create<GoalState>((set, get) => ({
     const petStore = usePetStore.getState();
     const { leveledUp, level } = await petStore.gainXp(reward.xp, reward.energy);
     await useProfileStore.getState().addCoins(reward.coins);
-    petStore.triggerAnim(leveledUp ? 'jump' : 'happy');
+    petStore.triggerAnim(leveledUp ? 'levelup' : 'jump');
     petStore.showReaction(
       leveledUp
         ? { kind: 'levelup', title: `Level ${level}!`, subtitle: `${petStore.pet?.name ?? 'Your pet'} grew stronger`, xp: reward.xp, energy: reward.energy, coins: reward.coins, level }

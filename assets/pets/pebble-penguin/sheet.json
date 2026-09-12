@@ -1,0 +1,79 @@
+{
+  "species": "penguin",
+  "cell": 256,
+  "scale": 8,
+  "rows": [
+    {
+      "pose": "idle",
+      "frames": 3
+    },
+    {
+      "pose": "calm",
+      "frames": 2
+    },
+    {
+      "pose": "happy",
+      "frames": 2
+    },
+    {
+      "pose": "excited",
+      "frames": 2
+    },
+    {
+      "pose": "proud",
+      "frames": 2
+    },
+    {
+      "pose": "curious",
+      "frames": 2
+    },
+    {
+      "pose": "sleepy",
+      "frames": 2
+    },
+    {
+      "pose": "tired",
+      "frames": 2
+    },
+    {
+      "pose": "tap",
+      "frames": 2
+    },
+    {
+      "pose": "levelup",
+      "frames": 2
+    }
+  ],
+  "anchors": {
+    "hat": {
+      "x": 16,
+      "y": 6
+    },
+    "eyes": {
+      "x": 16,
+      "y": 10
+    },
+    "neck": {
+      "x": 16,
+      "y": 15
+    },
+    "back": {
+      "x": 7,
+      "y": 17
+    },
+    "ground": 30,
+    "headHalf": 8
+  },
+  "palette": {
+    "outline": "#3B2A26",
+    "body": "#5E6C8A",
+    "light": "#8290AE",
+    "dark": "#43506B",
+    "belly": "#F6F8FF",
+    "bellyDark": "#D9DEEE",
+    "accent": "#F4C24B",
+    "accentDark": "#D69C2A",
+    "eye": "#2B1D1A",
+    "blush": "#F3A1B8"
+  }
+}

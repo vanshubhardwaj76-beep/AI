@@ -13,18 +13,16 @@ interface Props extends TextProps {
 }
 
 export function Text({ variant = 'body', muted, color, center, style, ...rest }: Props) {
-  const { colors } = useTheme();
-  return (
-    <RNText
-      {...rest}
-      style={[
-        typography[variant],
-        { color: color ?? (muted ? colors.textMuted : colors.text) },
-        center && styles.center,
-        style,
-      ]}
-    />
-  );
+  const { colors, fontsReady } = useTheme();
+  const flat = StyleSheet.flatten([
+    typography[variant],
+    { color: color ?? (muted ? colors.textMuted : colors.text) },
+    center && styles.center,
+    style,
+  ]) as Record<string, unknown>;
+  // Never reference a font family that hasn't loaded (avoids native 'unrecognized font' errors).
+  if (!fontsReady) delete flat.fontFamily;
+  return <RNText {...rest} style={flat} />;
 }
 
 const styles = StyleSheet.create({ center: { textAlign: 'center' } });

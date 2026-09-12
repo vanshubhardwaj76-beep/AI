@@ -1,21 +1,20 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
+import { Icon, type IconName } from '@/components/ui/Icon';
 
-type IconName = keyof typeof Ionicons.glyphMap;
-
-const TABS: { name: string; title: string; icon: IconName; iconActive: IconName }[] = [
-  { name: 'index', title: 'Home', icon: 'home-outline', iconActive: 'home' },
-  { name: 'goals', title: 'Goals', icon: 'checkmark-circle-outline', iconActive: 'checkmark-circle' },
-  { name: 'pet', title: 'Pet', icon: 'paw-outline', iconActive: 'paw' },
-  { name: 'journal', title: 'Journal', icon: 'book-outline', iconActive: 'book' },
-  { name: 'profile', title: 'Profile', icon: 'person-outline', iconActive: 'person' },
+const TABS: { name: string; title: string; icon: IconName }[] = [
+  { name: 'index', title: 'Home', icon: 'home' },
+  { name: 'goals', title: 'Goals', icon: 'goals' },
+  { name: 'pet', title: 'Pet', icon: 'pet' },
+  { name: 'journal', title: 'Journal', icon: 'journal' },
+  { name: 'profile', title: 'Profile', icon: 'profile' },
 ];
 
 export default function TabsLayout() {
-  const { colors } = useTheme();
+  const { colors, fontsReady } = useTheme();
   return (
     <Tabs
       screenOptions={{
@@ -28,7 +27,7 @@ export default function TabsLayout() {
           height: Platform.OS === 'ios' ? 86 : 68,
           paddingTop: 6,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', ...(fontsReady ? { fontFamily: 'Nunito_700Bold' } : {}) },
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
@@ -38,7 +37,11 @@ export default function TabsLayout() {
           name={t.name}
           options={{
             title: t.title,
-            tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? t.iconActive : t.icon} size={24} color={color} />,
+            tabBarIcon: ({ color, focused }) => (
+              <View style={{ width: 44, height: 30, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: focused ? colors.primarySoft : 'transparent' }}>
+                <Icon name={t.icon} size={22} color={String(color)} strokeWidth={focused ? 2.6 : 2} />
+              </View>
+            ),
           }}
         />
       ))}

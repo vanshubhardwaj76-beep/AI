@@ -1,4 +1,5 @@
 import type { PetMood } from '@/types';
+import type { IconName } from '@/components/ui/Icon';
 
 export interface MoodInputs {
   energy: number;
@@ -33,14 +34,14 @@ export const MOOD_LABEL: Record<PetMood, string> = {
   tired: 'A little tired',
 };
 
-export const MOOD_EMOJI: Record<PetMood, string> = {
-  happy: '♡',
-  excited: '✦',
-  sleepy: '☾',
-  curious: '?',
-  proud: '★',
-  calm: '~',
-  tired: '·',
+export const MOOD_ICON: Record<PetMood, IconName> = {
+  happy: 'heart',
+  excited: 'sparkle',
+  sleepy: 'moon',
+  curious: 'search',
+  proud: 'star',
+  calm: 'leaf',
+  tired: 'cloud',
 };
 
 const PET_LINES: Record<PetMood, string[]> = {

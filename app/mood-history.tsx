@@ -9,6 +9,7 @@ import { MOOD_OPTIONS } from '@/data/prompts';
 import { daysAgoKey, formatLongDate } from '@/utils/date';
 import { spacing } from '@/theme';
 import { useTheme } from '@/theme/ThemeProvider';
+import { Icon, IconTile } from '@/components/ui/Icon';
 
 export default function MoodHistory() {
   const router = useRouter();
@@ -36,13 +37,13 @@ export default function MoodHistory() {
     <Screen>
       <Header title="Mood history" back right={<Button title="Check in" size="sm" onPress={() => router.push('/mood')} />} />
       {entries.length === 0 ? (
-        <EmptyState emoji="🫶" title="No check-ins yet" body="Track how you feel and spot gentle patterns over time." actionLabel="Check in now" onAction={() => router.push('/mood')} />
+        <EmptyState icon="mood-add" title="No check-ins yet" body="Track how you feel and spot gentle patterns over time." actionLabel="Check in now" onAction={() => router.push('/mood')} />
       ) : (
         <>
           <Card>
             <Text variant="label" muted>Last 14 days</Text>
             <Text variant="heading" style={{ marginBottom: spacing.sm }}>
-              Average: {avg ? MOOD_OPTIONS.find((m) => m.value === Math.round(avg))?.emoji : '—'} {avg.toFixed(1)}/5
+              Average {avg.toFixed(1)}/5{avg ? ` · ${MOOD_OPTIONS.find((m) => m.value === Math.round(avg))?.label}` : ''}
             </Text>
             <LineChart values={last14} min={1} max={5} color={colors.primary} height={120} />
           </Card>
@@ -52,7 +53,7 @@ export default function MoodHistory() {
           {sel && (
             <Card alt style={{ marginTop: spacing.md }}>
               <View style={styles.row}>
-                <Text style={{ fontSize: 32 }}>{MOOD_OPTIONS.find((m) => m.value === sel.value)?.emoji}</Text>
+                <IconTile name={MOOD_OPTIONS.find((m) => m.value === sel.value)?.icon ?? 'mood-okay'} color={MOOD_OPTIONS.find((m) => m.value === sel.value)?.color} size={52} />
                 <View style={{ flex: 1 }}>
                   <Text variant="bodyBold">{formatLongDate(sel.date)}</Text>
                   <Text muted>{MOOD_OPTIONS.find((m) => m.value === sel.value)?.label}</Text>
@@ -65,7 +66,7 @@ export default function MoodHistory() {
           {entries.slice(0, 10).map((e) => (
             <Pressable key={e.id} onPress={() => setSelected(e.date)}>
               <Card style={[styles.row, { marginBottom: spacing.sm }]}>
-                <Text style={{ fontSize: 26 }}>{MOOD_OPTIONS.find((m) => m.value === e.value)?.emoji}</Text>
+                <IconTile name={MOOD_OPTIONS.find((m) => m.value === e.value)?.icon ?? 'mood-okay'} color={MOOD_OPTIONS.find((m) => m.value === e.value)?.color} size={44} />
                 <View style={{ flex: 1 }}>
                   <Text variant="bodyBold">{formatLongDate(e.date)}</Text>
                   {e.note ? <Text variant="caption" muted numberOfLines={1}>{e.note}</Text> : null}

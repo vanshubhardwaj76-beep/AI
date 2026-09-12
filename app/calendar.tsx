@@ -12,6 +12,7 @@ import { formatLongDate, fromDateKey, todayKey } from '@/utils/date';
 import { isGoalScheduledOn } from '@/utils/streaks';
 import { spacing } from '@/theme';
 import { useTheme } from '@/theme/ThemeProvider';
+import { Icon, IconTile } from '@/components/ui/Icon';
 
 export default function CalendarScreen() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function CalendarScreen() {
         <>
           {dayMood && (
             <Card style={{ marginBottom: spacing.sm }}>
-              <Text variant="bodyBold">{MOOD_OPTIONS.find((o) => o.value === dayMood.value)?.emoji} Feeling {MOOD_OPTIONS.find((o) => o.value === dayMood.value)?.label.toLowerCase()}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Icon name={MOOD_OPTIONS.find((o) => o.value === dayMood.value)?.icon ?? 'mood-okay'} size={18} color={MOOD_OPTIONS.find((o) => o.value === dayMood.value)?.color} /><Text variant="bodyBold">Feeling {MOOD_OPTIONS.find((o) => o.value === dayMood.value)?.label.toLowerCase()}</Text></View>
               {dayMood.note ? <Text muted style={{ marginTop: 4 }}>{dayMood.note}</Text> : null}
             </Card>
           )}
@@ -71,13 +72,13 @@ export default function CalendarScreen() {
               <Text variant="label" muted style={{ marginBottom: 6 }}>Completed goals</Text>
               {dayCompletions.map((c) => {
                 const g = goals.find((x) => x.id === c.goalId);
-                return <Text key={c.id}>✅ {g?.name ?? 'A goal'} <Text variant="caption" muted>+{c.xpAwarded} XP</Text></Text>;
+                return (<View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}><Icon name="check-circle" size={16} color="#4FA98B" /><Text style={{ flex: 1 }}>{g?.name ?? 'A goal'}</Text><Text variant="caption" muted>+{c.xpAwarded} XP</Text></View>);
               })}
             </Card>
           )}
           {dayJournal.map((j) => (
             <Card key={j.id} style={{ marginBottom: spacing.sm }}>
-              <Text variant="bodyBold">📝 {j.title || 'Journal entry'}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Icon name="journaling" size={16} color="#F5A3B5" /><Text variant="bodyBold">{j.title || 'Journal entry'}</Text></View>
               <Text muted numberOfLines={2} style={{ marginTop: 4 }}>{j.body}</Text>
               <Button title="Open" size="sm" variant="secondary" onPress={() => router.push({ pathname: '/journal/[id]', params: { id: j.id } })} style={{ marginTop: spacing.sm }} />
             </Card>

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Screen, Header, Text, Chip, EmptyState, IconButton, Card, ProgressBar } from '@/components/ui';
+import { Screen, Header, Text, Chip, EmptyState, IconButton, Card, ProgressBar, Icon } from '@/components/ui';
 import { GoalRow } from '@/components/goals/GoalRow';
 import { useGoalStore } from '@/store/goalStore';
 import { useTodayProgress } from '@/hooks/useToday';
@@ -33,10 +33,13 @@ export default function GoalsScreen() {
 
       <Card style={{ marginBottom: spacing.lg }}>
         <View style={styles.rowBetween}>
-          <Text variant="bodyBold">Today's progress</Text>
-          <Text muted>{Math.round(progress.ratio * 100)}%</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="check-circle" size={16} color="#6DBF9C" strokeWidth={2.5} />
+            <Text variant="bodyBold" style={{ marginLeft: 6 }}>Today's progress</Text>
+          </View>
+          <Text variant="caption" muted>{Math.round(progress.ratio * 100)}%</Text>
         </View>
-        <ProgressBar value={progress.ratio} />
+        <ProgressBar value={progress.ratio} color="#6DBF9C" />
       </Card>
 
       <View style={styles.filters}>
@@ -47,7 +50,7 @@ export default function GoalsScreen() {
 
       {list.length === 0 ? (
         <EmptyState
-          emoji={filter === 'paused' ? '⏸️' : '🌱'}
+          icon={filter === 'paused' ? 'pause' : 'mindfulness'}
           title={filter === 'paused' ? 'Nothing paused' : 'No goals yet'}
           body={filter === 'paused' ? 'Paused goals will rest here until you are ready.' : 'Start with something tiny — a glass of water counts.'}
           actionLabel={filter === 'paused' ? undefined : 'Create a goal'}
@@ -66,7 +69,7 @@ export default function GoalsScreen() {
             {filter !== 'today' && (
               <Text variant="caption" muted style={styles.meta}>
                 {g.frequency === 'daily' ? 'Every day' : g.frequency === 'weekly' ? 'Once a week' : g.days.map((d) => WEEKDAY_LABELS[d]).join(', ')}
-                {g.reminderTime ? ` · ⏰ ${g.reminderTime}` : ''}
+                {g.reminderTime ? ` · Reminder ${g.reminderTime}` : ''}
               </Text>
             )}
           </View>
@@ -77,7 +80,7 @@ export default function GoalsScreen() {
 }
 
 const styles = StyleSheet.create({
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   filters: { flexDirection: 'row', marginBottom: spacing.sm },
   meta: { marginTop: -4, marginBottom: spacing.md, marginLeft: spacing.sm },
 });

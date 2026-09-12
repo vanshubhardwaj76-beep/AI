@@ -1,0 +1,79 @@
+{
+  "species": "cat",
+  "cell": 256,
+  "scale": 8,
+  "rows": [
+    {
+      "pose": "idle",
+      "frames": 3
+    },
+    {
+      "pose": "calm",
+      "frames": 2
+    },
+    {
+      "pose": "happy",
+      "frames": 2
+    },
+    {
+      "pose": "excited",
+      "frames": 2
+    },
+    {
+      "pose": "proud",
+      "frames": 2
+    },
+    {
+      "pose": "curious",
+      "frames": 2
+    },
+    {
+      "pose": "sleepy",
+      "frames": 2
+    },
+    {
+      "pose": "tired",
+      "frames": 2
+    },
+    {
+      "pose": "tap",
+      "frames": 2
+    },
+    {
+      "pose": "levelup",
+      "frames": 2
+    }
+  ],
+  "anchors": {
+    "hat": {
+      "x": 16,
+      "y": 4
+    },
+    "eyes": {
+      "x": 16,
+      "y": 11
+    },
+    "neck": {
+      "x": 16,
+      "y": 18
+    },
+    "back": {
+      "x": 7,
+      "y": 19
+    },
+    "ground": 29,
+    "headHalf": 9
+  },
+  "palette": {
+    "outline": "#3B2A26",
+    "body": "#B8A9E8",
+    "light": "#D6CCF7",
+    "dark": "#8F7DCB",
+    "belly": "#F3EFFD",
+    "bellyDark": "#D9D0F0",
+    "accent": "#8E7CD1",
+    "accentDark": "#6B5AAE",
+    "eye": "#2B1D1A",
+    "blush": "#F3A1B8"
+  }
+}

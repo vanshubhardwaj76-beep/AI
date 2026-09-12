@@ -1,0 +1,79 @@
+{
+  "species": "fox",
+  "cell": 256,
+  "scale": 8,
+  "rows": [
+    {
+      "pose": "idle",
+      "frames": 3
+    },
+    {
+      "pose": "calm",
+      "frames": 2
+    },
+    {
+      "pose": "happy",
+      "frames": 2
+    },
+    {
+      "pose": "excited",
+      "frames": 2
+    },
+    {
+      "pose": "proud",
+      "frames": 2
+    },
+    {
+      "pose": "curious",
+      "frames": 2
+    },
+    {
+      "pose": "sleepy",
+      "frames": 2
+    },
+    {
+      "pose": "tired",
+      "frames": 2
+    },
+    {
+      "pose": "tap",
+      "frames": 2
+    },
+    {
+      "pose": "levelup",
+      "frames": 2
+    }
+  ],
+  "anchors": {
+    "hat": {
+      "x": 16,
+      "y": 4
+    },
+    "eyes": {
+      "x": 16,
+      "y": 11
+    },
+    "neck": {
+      "x": 16,
+      "y": 18
+    },
+    "back": {
+      "x": 7,
+      "y": 20
+    },
+    "ground": 29,
+    "headHalf": 9
+  },
+  "palette": {
+    "outline": "#3B2A26",
+    "body": "#EC8B5E",
+    "light": "#FFB387",
+    "dark": "#C9633A",
+    "belly": "#FFF2E6",
+    "bellyDark": "#F1D6C1",
+    "accent": "#4A2C22",
+    "accentDark": "#2E1B15",
+    "eye": "#2B1D1A",
+    "blush": "#F28A8A"
+  }
+}

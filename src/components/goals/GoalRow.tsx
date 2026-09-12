@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import type { Goal } from '@/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme';
@@ -46,11 +46,11 @@ export function GoalRow({ goal, done, streak = 0, onToggle, onPress }: Props) {
             anim,
           ]}
         >
-          {done && <Ionicons name="checkmark" size={20} color="#2A1D12" />}
+          {done && <Icon name="check" size={18} color="#2A1D12" strokeWidth={3.2} />}
         </Animated.View>
       </Pressable>
       <View style={[styles.icon, { backgroundColor: goal.color + '33' }]}>
-        <Ionicons name={goal.icon as any} size={20} color={goal.color} />
+        <Icon name={goal.icon as IconName} size={20} color={goal.color} />
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="bodyBold" style={done && styles.strike} numberOfLines={1}>
@@ -63,12 +63,11 @@ export function GoalRow({ goal, done, streak = 0, onToggle, onPress }: Props) {
         ) : null}
       </View>
       {goal.paused ? (
-        <Ionicons name="pause-circle" size={18} color={colors.textMuted} />
+        <Icon name="pause" size={18} color={colors.textMuted} />
       ) : streak > 0 ? (
         <View style={[styles.streak, { backgroundColor: colors.cardAlt }]}>
-          <Text variant="caption" style={{ fontWeight: '800' }}>
-            🔥 {streak}
-          </Text>
+          <Icon name="streak" size={13} color="#E76F51" fill="#F4A261" />
+          <Text variant="caption" style={{ fontFamily: 'Nunito_800ExtraBold', marginLeft: 3 }}>{streak}</Text>
         </View>
       ) : null}
     </Pressable>
@@ -83,9 +82,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     marginBottom: spacing.sm,
+    shadowColor: '#C9A88A', shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1,
   },
   check: { width: 30, height: 30, borderRadius: 15, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
   icon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
   strike: { textDecorationLine: 'line-through', opacity: 0.6 },
-  streak: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
+  streak: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
 });

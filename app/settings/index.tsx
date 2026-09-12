@@ -90,7 +90,7 @@ export default function SettingsScreen() {
       <Section title="Appearance">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
           {(['system', 'light', 'dark'] as ThemePreference[]).map((t) => (
-            <Chip key={t} label={t === 'system' ? 'Match system' : t === 'light' ? 'Light' : 'Dark'} icon={t === 'system' ? 'phone-portrait-outline' : t === 'light' ? 'sunny-outline' : 'moon-outline'} selected={settings.theme === t} onPress={() => update({ theme: t })} />
+            <Chip key={t} label={t === 'system' ? 'Match system' : t === 'light' ? 'Light' : 'Dark'} icon={t === 'system' ? 'refresh' : t === 'light' ? 'sun' : 'moon'} selected={settings.theme === t} onPress={() => update({ theme: t })} />
           ))}
         </View>
       </Section>

@@ -52,7 +52,7 @@ function render(size, { transparentBg = false, scale = 1, monochrome = false } =
   return PNG.sync.write(png);
 }
 
-const out = path.join(__dirname, '..', 'assets');
+const out = path.join(__dirname, '..', 'assets', 'icons');
 fs.writeFileSync(path.join(out, 'icon.png'), render(1024));
 fs.writeFileSync(path.join(out, 'splash-icon.png'), render(1024, { transparentBg: true, scale: 0.8 }));
 fs.writeFileSync(path.join(out, 'favicon.png'), render(64));

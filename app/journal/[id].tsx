@@ -22,7 +22,7 @@ export default function EntryDetail() {
     return (
       <Screen>
         <Header title="Journal" back />
-        <EmptyState emoji="🍃" title="Entry not found" actionLabel="Back" onAction={() => router.back()} />
+        <EmptyState icon="journaling" title="Entry not found" actionLabel="Back" onAction={() => router.back()} />
       </Screen>
     );
   }

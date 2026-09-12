@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { Easing, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
-import { Screen, Header, Text, Card, Button, ProgressBar, useToast } from '@/components/ui';
+import { Screen, Header, Text, Card, Button, ProgressBar, useToast, Icon, IconTile } from '@/components/ui';
+import type { IconName } from '@/components/ui';
+import { Environment } from '@/components/pet/Environment';
 import { PetAvatar } from '@/components/pet/PetAvatar';
 import { useAdventureStore } from '@/store/adventureStore';
 import { usePetStore } from '@/store/petStore';
@@ -14,6 +16,8 @@ import { radius, spacing } from '@/theme';
 import { AdventureResult } from '@/types';
 import { notificationService } from '@/services/notifications';
 import { MAX_ENERGY } from '@/utils/leveling';
+
+const LOC_ENV: Record<string, string> = { forest: 'env_forest', beach: 'env_beach', mountains: 'env_cabin', garden: 'env_garden', snow: 'env_village', ruins: 'env_forest', space: 'env_space' };
 
 export default function AdventureScreen() {
   const router = useRouter();
@@ -64,17 +68,17 @@ export default function AdventureScreen() {
       <Screen>
         <Header title={`${pet.name} is back!`} back />
         <Animated.View entering={FadeInDown.duration(400)} style={styles.center}>
-          <PetAvatar pet={pet} size={200} showEnvironment={false} />
+          <PetAvatar pet={{ ...pet, environmentId: LOC_ENV[loc.id] ?? pet.environmentId }} size={260} mood="proud" />
           <Card style={{ alignSelf: 'stretch', marginTop: spacing.md }}>
-            <Text variant="heading" center>{loc.emoji} {loc.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Icon name={loc.icon} size={20} color={loc.color} /><Text variant="heading" center>{loc.name}</Text></View>
             <Text center style={{ marginTop: spacing.sm, lineHeight: 24 }}>{result.story}</Text>
           </Card>
           <Card alt style={{ alignSelf: 'stretch', marginTop: spacing.md }}>
             <Text variant="label" muted style={{ marginBottom: spacing.sm }}>Brought home</Text>
-            <Reward emoji="✨" label={`${result.xp} XP`} />
-            <Reward emoji="🪙" label={`${result.coins} coins`} />
-            {result.itemIds.map((id) => <Reward key={id} emoji={itemById(id)?.emoji ?? '🎁'} label={`${itemById(id)?.name} (new item!)`} />)}
-            {result.collectibleId && <Reward emoji={itemById(result.collectibleId)?.emoji ?? '🎁'} label={`${itemById(result.collectibleId)?.name} (collectible!)`} />}
+            <Reward icon="xp" color="#B8A9E8" label={`${result.xp} XP`} />
+            <Reward icon="coins" color="#D69C2A" label={`${result.coins} coins`} />
+            {result.itemIds.map((id) => <Reward key={id} icon={itemById(id)?.icon ?? 'gift'} color={itemById(id)?.color ?? '#F4A261'} label={`${itemById(id)?.name} (new item!)`} />)}
+            {result.collectibleId && <Reward icon={itemById(result.collectibleId)?.icon ?? 'gift'} color={itemById(result.collectibleId)?.color ?? '#F4A261'} label={`${itemById(result.collectibleId)?.name} (collectible!)`} />}
           </Card>
           <Button title="Wonderful" size="lg" fullWidth onPress={() => setResult(null)} style={{ marginTop: spacing.lg }} />
         </Animated.View>
@@ -87,8 +91,8 @@ export default function AdventureScreen() {
       <Screen>
         <Header title="Adventure in progress" back />
         <View style={styles.center}>
-          <Travelling pet={pet} color={loc.color} />
-          <Text variant="title" style={{ marginTop: spacing.md }}>{loc.emoji} {loc.name}</Text>
+          <Travelling pet={pet} envId={LOC_ENV[loc.id] ?? 'env_forest'} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: spacing.md }}><Icon name={loc.icon} size={22} color={loc.color} /><Text variant="title">{loc.name}</Text></View>
           <Text muted center style={{ marginTop: 4 }}>{done ? `${pet.name} is on the way home!` : `${pet.name} is exploring…`}</Text>
           <View style={{ alignSelf: 'stretch', marginTop: spacing.lg }}>
             <ProgressBar value={progress} color={loc.color} height={16} />
@@ -105,24 +109,32 @@ export default function AdventureScreen() {
 
   return (
     <Screen>
-      <Header title="Adventures" back subtitle={`⚡ ${pet.energy}/${MAX_ENERGY} energy · complete goals to recharge`} />
+      <Header title="Adventures" back subtitle={`${pet.energy}/${MAX_ENERGY} energy · complete goals to recharge`} />
       {ADVENTURES.map((a) => {
         const locked = pet.level < a.unlockLevel;
         const canAfford = pet.energy >= a.energyCost;
         return (
           <Pressable key={a.id} disabled={locked || !canAfford || busy} onPress={() => onStart(a.id)} accessibilityRole="button" accessibilityLabel={a.name}>
             <Card style={[styles.loc, { opacity: locked ? 0.55 : 1 }]}>
-              <View style={[styles.badge, { backgroundColor: a.color + '66' }]}>
-                <Text style={{ fontSize: 30 }}>{locked ? '🔒' : a.emoji}</Text>
+              <View style={styles.badge}>
+                <Environment id={LOC_ENV[a.id] ?? 'env_forest'} size={64} radius={16} animated={false} />
+                {locked && <View style={styles.lockOverlay}><Icon name="lock" size={20} color="#FFFFFF" /></View>}
               </View>
               <View style={{ flex: 1 }}>
                 <Text variant="bodyBold">{a.name}</Text>
                 <Text variant="caption" muted>{a.description}</Text>
-                <Text variant="caption" style={{ marginTop: 4, color: canAfford || locked ? colors.textMuted : colors.danger }}>
-                  {locked ? `Unlocks at level ${a.unlockLevel}` : `⚡ ${a.energyCost} · ⏱ ${a.durationMinutes} min`}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
+                  {locked ? <Text variant="caption" muted>Unlocks at level {a.unlockLevel}</Text> : (
+                    <>
+                      <Icon name="energy" size={12} color={canAfford ? '#4FA98B' : colors.danger} strokeWidth={2.6} />
+                      <Text variant="caption" style={{ color: canAfford ? colors.textMuted : colors.danger }}>{a.energyCost}</Text>
+                      <Icon name="timer" size={12} color={colors.textMuted} style={{ marginLeft: 6 }} />
+                      <Text variant="caption" muted>{a.durationMinutes} min</Text>
+                    </>
+                  )}
+                </View>
               </View>
-              {!locked && <Text variant="bodyBold" color={canAfford ? colors.primary : colors.textMuted}>{canAfford ? 'Go →' : 'Rest'}</Text>}
+              {!locked && (canAfford ? <Icon name="arrow-right" size={20} color={colors.primary} /> : <Text variant="caption" muted>Rest</Text>)}
             </Card>
           </Pressable>
         );
@@ -132,7 +144,7 @@ export default function AdventureScreen() {
         const l = adventureById(r.locationId);
         return (
           <Card key={r.id} alt style={{ marginTop: spacing.sm }}>
-            <Text variant="caption" muted>{l?.emoji} {l?.name} · {new Date(r.startedAt).toLocaleDateString()}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>{l && <Icon name={l.icon} size={14} color={l.color} />}<Text variant="caption" muted>{l?.name} · {new Date(r.startedAt).toLocaleDateString()}</Text></View>
             <Text variant="caption" style={{ marginTop: 4 }}>{r.result?.story}</Text>
           </Card>
         );
@@ -141,25 +153,25 @@ export default function AdventureScreen() {
   );
 }
 
-function Travelling({ pet, color }: { pet: NonNullable<ReturnType<typeof usePetStore.getState>['pet']>; color: string }) {
+function Travelling({ pet, envId }: { pet: NonNullable<ReturnType<typeof usePetStore.getState>['pet']>; envId: string }) {
   const x = useSharedValue(0);
   useEffect(() => {
     x.value = withRepeat(withSequence(withTiming(30, { duration: 1800, easing: Easing.inOut(Easing.quad) }), withTiming(-30, { duration: 1800, easing: Easing.inOut(Easing.quad) })), -1);
   }, [x]);
   const anim = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   return (
-    <View style={[styles.stage, { backgroundColor: color + '44' }]}>
-      <Animated.View style={anim}>
-        <PetAvatar pet={pet} size={180} showEnvironment={false} interactive={false} mood="excited" />
+    <Environment id={envId} size={300}>
+      <Animated.View style={[anim, { marginBottom: 24 }]}>
+        <PetAvatar pet={pet} size={190} showEnvironment={false} interactive={false} mood="excited" />
       </Animated.View>
-    </View>
+    </Environment>
   );
 }
 
-function Reward({ emoji, label }: { emoji: string; label: string }) {
+function Reward({ icon, color, label }: { icon: IconName; color: string; label: string }) {
   return (
     <View style={styles.reward}>
-      <Text style={{ fontSize: 22 }}>{emoji}</Text>
+      <IconTile name={icon} color={color} size={36} />
       <Text variant="bodyBold">{label}</Text>
     </View>
   );
@@ -168,7 +180,8 @@ function Reward({ emoji, label }: { emoji: string; label: string }) {
 const styles = StyleSheet.create({
   center: { alignItems: 'center' },
   loc: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
-  badge: { width: 56, height: 56, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  badge: { width: 64, height: 64, borderRadius: 16, overflow: 'hidden' },
+  lockOverlay: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(59,42,38,0.45)', alignItems: 'center', justifyContent: 'center' },
   stage: { width: '100%', height: 220, borderRadius: radius.xl, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   reward: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
 });

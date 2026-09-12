@@ -28,11 +28,11 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
     await db.collection<ActivityLog>('activity_logs').put(log);
     const pet = usePetStore.getState();
     const { leveledUp, level } = await pet.gainXp(act.xp, act.energy);
-    pet.triggerAnim(leveledUp ? 'jump' : 'happy');
+    pet.triggerAnim(leveledUp ? 'levelup' : 'jump');
     pet.showReaction(
       leveledUp
         ? { kind: 'levelup', title: `Level ${level}!`, subtitle: act.title, xp: act.xp, energy: act.energy, level }
-        : { kind: 'activity', title: 'Well done ✨', subtitle: act.title, xp: act.xp, energy: act.energy },
+        : { kind: 'activity', title: 'Well done', subtitle: act.title, xp: act.xp, energy: act.energy },
     );
   },
   reset: async () => {

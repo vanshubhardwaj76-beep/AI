@@ -10,8 +10,16 @@ import { ENCOURAGEMENTS } from '@/data/prompts';
 import { Friend } from '@/types';
 import { spacing } from '@/theme';
 import { useTheme } from '@/theme/ThemeProvider';
+import { Icon, type IconName } from '@/components/ui/Icon';
 
-const REACTIONS = ['👏', '💛', '🌟', '🌱', '🫶'];
+const REACTIONS: { id: string; icon: IconName; color: string; label: string }[] = [
+  { id: 'clap', icon: 'clap', color: '#F4A261', label: 'Clap' },
+  { id: 'heart', icon: 'heart', color: '#F07A8E', label: 'Heart' },
+  { id: 'star', icon: 'star', color: '#F4C24B', label: 'Star' },
+  { id: 'sprout', icon: 'mindfulness', color: '#4FA98B', label: 'Sprout' },
+  { id: 'hug', icon: 'friendship', color: '#B8A9E8', label: 'Hug' },
+];
+const reactionById = (id: string) => REACTIONS.find((r) => r.id === id) ?? REACTIONS[1];
 
 export default function FriendsScreen() {
   const toast = useToast();
@@ -35,7 +43,7 @@ export default function FriendsScreen() {
     if (!r.ok) return setErr(r.reason ?? 'Could not add');
     setErr(null);
     setCode('');
-    toast('Friend added 💛', 'success');
+    toast('Friend added', 'success');
   };
 
   return (
@@ -56,7 +64,7 @@ export default function FriendsScreen() {
 
       <Text variant="label" muted style={{ marginTop: spacing.xl, marginBottom: spacing.sm }}>Your friends</Text>
       {friends.length === 0 ? (
-        <EmptyState emoji="🌼" title="No friends yet" body="Add someone's code to see their companion and send encouragement." />
+        <EmptyState icon="users" title="No friends yet" body="Add someone's code to see their companion and send encouragement." />
       ) : (
         friends.map((f) => (
           <Pressable key={f.id} onPress={() => setOpen(f)} accessibilityRole="button">
@@ -65,9 +73,9 @@ export default function FriendsScreen() {
               <View style={{ flex: 1 }}>
                 <Text variant="bodyBold">{f.name}</Text>
                 <Text variant="caption" muted>{f.petName} the {speciesInfo(f.species).name} · Lv {f.level}</Text>
-                {f.reactions.length > 0 && <Text variant="caption" style={{ marginTop: 2 }}>{f.reactions.slice(0, 5).map((r) => r.emoji).join(' ')}</Text>}
+                {f.reactions.length > 0 && <View style={{ flexDirection: 'row', gap: 4, marginTop: 4 }}>{f.reactions.slice(0, 5).map((r, i) => <Icon key={i} name={reactionById(r.emoji).icon} size={14} color={reactionById(r.emoji).color} />)}</View>}
               </View>
-              <Text variant="caption" muted>Say hi →</Text>
+              <Icon name="forward" size={18} color={colors.textMuted} />
             </Card>
           </Pressable>
         ))
@@ -82,8 +90,8 @@ export default function FriendsScreen() {
             <Text variant="label" muted style={{ marginBottom: spacing.sm }}>Send a reaction</Text>
             <View style={styles.reactRow}>
               {REACTIONS.map((r) => (
-                <Pressable key={r} onPress={async () => { await react(open.id, r); toast(`Sent ${r}`, 'success'); setOpen({ ...open, reactions: [{ emoji: r, at: '' }, ...open.reactions] }); }} style={[styles.react, { backgroundColor: colors.cardAlt }]} accessibilityRole="button" accessibilityLabel={`React ${r}`}>
-                  <Text style={{ fontSize: 26 }}>{r}</Text>
+                <Pressable key={r.id} onPress={async () => { await react(open.id, r.id); toast(`Sent a ${r.label.toLowerCase()}`, 'success'); setOpen({ ...open, reactions: [{ emoji: r.id, at: '' }, ...open.reactions] }); }} style={({ pressed }) => [styles.react, { backgroundColor: r.color + '2E', transform: [{ scale: pressed ? 0.92 : 1 }] }]} accessibilityRole="button" accessibilityLabel={`React ${r.label}`}>
+                  <Icon name={r.icon} size={26} color={r.color} />
                 </Pressable>
               ))}
             </View>
@@ -92,7 +100,7 @@ export default function FriendsScreen() {
               {ENCOURAGEMENTS.map((e) => <Chip key={e} label={e} selected={message === e} onPress={() => setMessage(e)} />)}
             </View>
             <Input value={message} onChangeText={setMessage} placeholder="Or write your own…" maxLength={140} />
-            <Button title="Send" fullWidth disabled={!message.trim()} onPress={async () => { await encourage(open.id, message.trim()); toast(`Sent to ${open.name} 💌`, 'success'); setMessage(''); setOpen(null); }} />
+            <Button title="Send" fullWidth disabled={!message.trim()} onPress={async () => { await encourage(open.id, message.trim()); toast(`Sent to ${open.name}`, 'success'); setMessage(''); setOpen(null); }} />
             <Button title="Remove friend" variant="ghost" fullWidth onPress={async () => { await remove(open.id); setOpen(null); }} style={{ marginTop: spacing.sm }} />
           </View>
         )}

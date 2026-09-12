@@ -1,3 +1,4 @@
+import type { IconName } from '@/components/ui/Icon';
 // ---------- Pet ----------
 export type PetSpecies = 'bird' | 'cat' | 'fox' | 'bunny' | 'penguin';
 
@@ -52,7 +53,7 @@ export interface Goal {
   days: number[];
   reminderTime: string | null; // "HH:mm"
   difficulty: GoalDifficulty;
-  icon: string; // Ionicons name
+  icon: string; // Icon name (see components/ui/Icon)
   color: string;
   paused: boolean;
   createdAt: string;
@@ -125,7 +126,7 @@ export interface Item {
   price: number; // coins, 0 = unlock via level/adventure only
   unlockLevel: number;
   rarity: 'common' | 'rare' | 'epic';
-  emoji: string;
+  icon: IconName;
   color: string;
 }
 
