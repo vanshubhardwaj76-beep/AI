@@ -50,7 +50,7 @@ export default function HomeScreen() {
   const away = phase === 'on_adventure' || phase === 'returned';
   const resting = phase === 'resting';
   const moodOpt = todayMood ? MOOD_OPTIONS.find((m) => m.value === todayMood.value) : null;
-  const stageSize = Math.min(width - spacing.lg * 2, 420);
+  const stageSize = Math.max(240, Math.min(width - spacing.lg * 2, 420));
 
   return (
     <Screen>

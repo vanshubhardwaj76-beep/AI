@@ -23,7 +23,7 @@ interface Props {
   children?: React.ReactNode;
 }
 
-const SCROLL_MS = { far: 34000, mid: 16000, near: 7500 };
+const SCROLL_MS = { far: 26000, mid: 11000, near: 4500, ground: 2600 };
 
 export function Environment({ id, size, radius = 36, animated = true, scroll = false, children }: Props) {
   const drift = useSharedValue(0);
@@ -31,6 +31,7 @@ export function Environment({ id, size, radius = 36, animated = true, scroll = f
   const sFar = useSharedValue(0);
   const sMid = useSharedValue(0);
   const sNear = useSharedValue(0);
+  const sGround = useSharedValue(0);
   useEffect(() => {
     if (!animated) return;
     rise.value = withRepeat(withTiming(1, { duration: 9000, easing: Easing.linear }), -1);
@@ -39,19 +40,29 @@ export function Environment({ id, size, radius = 36, animated = true, scroll = f
       sFar.value = withRepeat(withTiming(1, { duration: SCROLL_MS.far, easing: Easing.linear }), -1);
       sMid.value = withRepeat(withTiming(1, { duration: SCROLL_MS.mid, easing: Easing.linear }), -1);
       sNear.value = withRepeat(withTiming(1, { duration: SCROLL_MS.near, easing: Easing.linear }), -1);
+      sGround.value = withRepeat(withTiming(1, { duration: SCROLL_MS.ground, easing: Easing.linear }), -1);
     } else {
       drift.value = withRepeat(withSequence(withTiming(1, { duration: 6000, easing: Easing.inOut(Easing.sin) }), withTiming(0, { duration: 6000, easing: Easing.inOut(Easing.sin) })), -1);
     }
-    return () => { cancelAnimation(sFar); cancelAnimation(sMid); cancelAnimation(sNear); cancelAnimation(drift); cancelAnimation(rise); };
-  }, [animated, scroll, drift, rise, sFar, sMid, sNear]);
-  const far = useAnimatedStyle(() => ({ transform: [{ translateX: scroll ? -sFar.value * size : (drift.value - 0.5) * size * 0.015 }] }));
-  const mid = useAnimatedStyle(() => ({ transform: [{ translateX: scroll ? -sMid.value * size : (drift.value - 0.5) * size * 0.035 }] }));
-  const near = useAnimatedStyle(() => ({ transform: [{ translateX: scroll ? -sNear.value * size : (drift.value - 0.5) * -size * 0.05 }] }));
-  const particles = useAnimatedStyle(() => ({ transform: [{ translateY: -rise.value * size * 0.5 }], opacity: 1 - Math.abs(rise.value - 0.5) * 1.2 }));
+    return () => { cancelAnimation(sFar); cancelAnimation(sMid); cancelAnimation(sNear); cancelAnimation(sGround); cancelAnimation(drift); cancelAnimation(rise); };
+  }, [animated, scroll, drift, rise, sFar, sMid, sNear, sGround]);
+  // Travelling: translate each doubled layer by exactly -progress*size; when the value wraps 1→0 the second
+  // tile is precisely where the first was, so the loop is seamless. Direction is right→left (negative X).
+  // Worklets must not close over props (they can be captured stale on the JS-driven web build),
+  // so `size` and the mode live in shared values that are kept in sync.
+  const sizeSV = useSharedValue(size);
+  const modeSV = useSharedValue(scroll ? 1 : 0);
+  useEffect(() => { sizeSV.value = size; modeSV.value = scroll ? 1 : 0; }, [size, scroll, sizeSV, modeSV]);
+  const far = useAnimatedStyle(() => ({ transform: [{ translateX: modeSV.value ? -sFar.value * sizeSV.value : (drift.value - 0.5) * sizeSV.value * 0.015 }] }));
+  const mid = useAnimatedStyle(() => ({ transform: [{ translateX: modeSV.value ? -sMid.value * sizeSV.value : (drift.value - 0.5) * sizeSV.value * 0.035 }] }));
+  const near = useAnimatedStyle(() => ({ transform: [{ translateX: modeSV.value ? -sNear.value * sizeSV.value : (drift.value - 0.5) * -sizeSV.value * 0.05 }] }));
+  // Ground path: a repeating strip of pebbles/tufts that scrolls fastest of all – the clearest "we are moving" cue.
+  const ground = useAnimatedStyle(() => ({ transform: [{ translateX: -sGround.value * sizeSV.value }] }));
+  const particles = useAnimatedStyle(() => ({ transform: [{ translateY: -rise.value * sizeSV.value * 0.5 }], opacity: 1 - Math.abs(rise.value - 0.5) * 1.2 }));
 
   const scene = SCENES[id] ?? SCENES.env_bedroom;
   const L = (node: React.ReactNode, style: any, key: string) => (
-    <Animated.View key={key} style={[StyleSheet.absoluteFill, scroll ? { width: size * 2, flexDirection: 'row' } : null, style]} pointerEvents="none">
+    <Animated.View key={key} style={[scroll ? styles.scrollLayer : StyleSheet.absoluteFill, scroll ? { width: size * 2, height: size } : null, style]} pointerEvents="none">
       <Svg width={size} height={size} viewBox="0 0 200 200">{node}</Svg>
       {scroll ? <Svg width={size} height={size} viewBox="0 0 200 200">{node}</Svg> : null}
     </Animated.View>
@@ -65,15 +76,36 @@ export function Environment({ id, size, radius = 36, animated = true, scroll = f
       {L(scene.far, far, 'far')}
       {L(scene.mid, mid, 'mid')}
       {scene.particles ? L(scene.particles, particles, 'p') : null}
+      {scroll ? L(<GroundStrip scene={scene} />, ground, 'ground') : null}
       <View style={styles.pet} pointerEvents="box-none">{children}</View>
       {L(scene.near, near, 'near')}
     </View>
   );
 }
 
-const styles = StyleSheet.create({ pet: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'flex-end' } });
+/** Repeating 200-unit-wide ground band with tufts and pebbles (tiles seamlessly). */
+function GroundStrip({ scene }: { scene: Scene }) {
+  const c = scene.groundColor ?? '#6DBF9C';
+  const dark = scene.groundDark ?? '#4FA98B';
+  return (
+    <G>
+      <Rect x={0} y={178} width={200} height={22} fill={c} />
+      <Rect x={0} y={178} width={200} height={2} fill={dark} opacity={0.5} />
+      {[8, 34, 61, 92, 118, 147, 173].map((x, i) => (
+        <G key={x}>
+          <Path d={`M${x} 184 q2 -6 4 0`} stroke={dark} strokeWidth={1.6} fill="none" />
+          <Ellipse cx={x + 14} cy={188 + (i % 2) * 3} rx={2.2} ry={1.3} fill={dark} opacity={0.7} />
+        </G>
+      ))}
+    </G>
+  );
+}
 
-interface Scene { sky: React.ReactNode; far: React.ReactNode; mid: React.ReactNode; near: React.ReactNode; particles?: React.ReactNode }
+const styles = StyleSheet.create({
+  scrollLayer: { position: 'absolute', left: 0, top: 0, flexDirection: 'row' },
+  pet: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'flex-end' } });
+
+interface Scene { sky: React.ReactNode; far: React.ReactNode; mid: React.ReactNode; near: React.ReactNode; particles?: React.ReactNode; groundColor?: string; groundDark?: string }
 
 const grad = (id: string, from: string, to: string) => (
   <Defs>
@@ -113,6 +145,7 @@ const star = (x: number, y: number, r: number, c = '#FFFFFF') => <Circle key={`$
 
 const SCENES: Record<string, Scene> = {
   env_bedroom: {
+    groundColor: '#E6B98F', groundDark: '#C9946B',
     sky: (<G>{grad('bed', '#FFE9D6', '#FBD9BF')}<Rect width={200} height={200} fill="url(#bed)" /><Rect x={0} y={132} width={200} height={68} fill="#E6B98F" /><Rect x={0} y={132} width={200} height={3} fill="#C9946B" />
       {Array.from({ length: 7 }).map((_, i) => <Rect key={i} x={0} y={140 + i * 9} width={200} height={1} fill="#D9A97F" />)}</G>),
     far: (<G><Rect x={28} y={26} width={62} height={56} rx={6} fill="#FFF8F0" /><Rect x={33} y={31} width={52} height={46} rx={4} fill="#BFE0F5" /><Rect x={58} y={31} width={2} height={46} fill="#FFF8F0" /><Rect x={33} y={53} width={52} height={2} fill="#FFF8F0" />
@@ -125,6 +158,7 @@ const SCENES: Record<string, Scene> = {
     particles: (<G>{star(40, 150, 1.5, '#FFF6EC')}{star(160, 170, 1.2, '#FFF6EC')}{star(120, 190, 1, '#FFF6EC')}{star(70, 185, 1.4, '#FFF6EC')}</G>),
   },
   env_forest: {
+    groundColor: '#6DBF9C', groundDark: '#3E8C72',
     sky: (<G>{grad('fs', '#CFEBDB', '#EAF6EE')}<Rect width={200} height={200} fill="url(#fs)" /><Circle cx={160} cy={40} r={16} fill="#FFF3B0" opacity={0.9} /><Circle cx={160} cy={40} r={26} fill="#FFF3B0" opacity={0.25} /></G>),
     far: (<G opacity={0.55}>{tree(20, 120, 1.1, '#9ED3B8', '#8AC6A8')}{tree(60, 118, 0.9, '#9ED3B8', '#8AC6A8')}{tree(105, 122, 1.0, '#9ED3B8', '#8AC6A8')}{tree(150, 118, 1.2, '#9ED3B8', '#8AC6A8')}{tree(190, 120, 0.9, '#9ED3B8', '#8AC6A8')}<Ellipse cx={100} cy={130} rx={130} ry={16} fill="#8AC6A8" /></G>),
     mid: (<G>{tree(8, 150, 1.4, '#4FA98B', '#3E8C72')}{tree(195, 148, 1.3, '#4FA98B', '#3E8C72')}{tree(48, 142, 0.8, '#5FB89A', '#4FA98B')}{tree(160, 144, 0.9, '#5FB89A', '#4FA98B')}<Ellipse cx={100} cy={166} rx={140} ry={30} fill="#6DBF9C" /><Ellipse cx={100} cy={172} rx={120} ry={20} fill="#7FCBA6" />
@@ -133,6 +167,7 @@ const SCENES: Record<string, Scene> = {
     particles: (<G>{star(40, 130, 1.4, '#FFF3B0')}{star(150, 160, 1.2, '#FFF3B0')}{star(90, 180, 1, '#FFF3B0')}{star(120, 140, 1.5, '#FFFFFF')}{star(65, 195, 1.2, '#FFF3B0')}</G>),
   },
   env_beach: {
+    groundColor: '#F7E1B5', groundDark: '#E0C48F',
     sky: (<G>{grad('bs', '#BFE4F7', '#E9F6FD')}<Rect width={200} height={200} fill="url(#bs)" /><Circle cx={46} cy={40} r={14} fill="#FFE08A" /><Circle cx={46} cy={40} r={22} fill="#FFE08A" opacity={0.25} /></G>),
     far: (<G>{cloud(130, 36, 0.8)}{cloud(175, 60, 0.6)}{cloud(90, 62, 0.5, '#F7FBFF')}<Rect x={0} y={104} width={200} height={40} fill="#6FB6E0" /><Path d="M0 104 q20 -4 40 0 t40 0 t40 0 t40 0 t40 0 v10 h-200z" fill="#8EC5E8" /></G>),
     mid: (<G><Path d="M0 130 q25 -8 50 0 t50 0 t50 0 t50 0 v20 h-200z" fill="#A9D8F2" /><Path d="M0 140 q25 -6 50 0 t50 0 t50 0 t50 0 v6 h-200z" fill="#FFFFFF" opacity={0.7} /><Path d="M0 146 q30 -8 60 0 t60 0 t60 0 v60 h-200z" fill="#F7E1B5" /><Path d="M0 152 q30 -6 60 0 t60 0 t60 0 v3 h-200z" fill="#FFFFFF" opacity={0.5} /></G>),
@@ -140,6 +175,7 @@ const SCENES: Record<string, Scene> = {
     particles: (<G>{star(60, 150, 1.2)}{star(140, 170, 1.4)}{star(100, 130, 1)}{star(30, 190, 1.2)}</G>),
   },
   env_cafe: {
+    groundColor: '#B98461', groundDark: '#A9724F',
     sky: (<G>{grad('cs', '#F7E4D0', '#EBCDB0')}<Rect width={200} height={200} fill="url(#cs)" /><Rect x={0} y={120} width={200} height={80} fill="#B98461" />{Array.from({ length: 6 }).map((_, i) => <Rect key={i} x={0} y={128 + i * 12} width={200} height={1} fill="#A9724F" />)}</G>),
     far: (<G><Rect x={18} y={28} width={54} height={60} rx={6} fill="#FFF8F0" /><Rect x={22} y={32} width={46} height={52} rx={4} fill="#CFE3F2" /><Rect x={44} y={32} width={2} height={52} fill="#FFF8F0" /><Rect x={128} y={28} width={54} height={60} rx={6} fill="#FFF8F0" /><Rect x={132} y={32} width={46} height={52} rx={4} fill="#CFE3F2" /><Rect x={154} y={32} width={2} height={52} fill="#FFF8F0" />
       <Rect x={86} y={30} width={28} height={40} rx={3} fill="#4A2C22" /><Rect x={90} y={34} width={20} height={4} rx={1} fill="#F4C24B" /><Rect x={90} y={42} width={16} height={2} fill="#FFF6EC" /><Rect x={90} y={48} width={18} height={2} fill="#FFF6EC" /><Rect x={90} y={54} width={12} height={2} fill="#FFF6EC" /></G>),
@@ -149,6 +185,7 @@ const SCENES: Record<string, Scene> = {
     particles: (<G>{star(100, 150, 1.4, '#FFF6EC')}{star(60, 170, 1.2, '#FFF6EC')}{star(140, 180, 1, '#FFF6EC')}</G>),
   },
   env_cabin: {
+    groundColor: '#F4EFFA', groundDark: '#D9D0F0',
     sky: (<G>{grad('ms', '#DDD5F3', '#F1ECFA')}<Rect width={200} height={200} fill="url(#ms)" />{star(30, 24, 1.3)}{star(70, 14, 1)}{star(150, 30, 1.4)}{star(180, 12, 1)}{star(110, 22, 0.8)}</G>),
     far: (<G><Polygon points="-10,120 40,44 90,120" fill="#B8A9E8" /><Polygon points="40,44 30,60 50,60" fill="#FFFFFF" /><Polygon points="70,120 120,30 170,120" fill="#9A88D6" /><Polygon points="120,30 108,50 132,50" fill="#FFFFFF" /><Polygon points="140,120 185,60 230,120" fill="#B8A9E8" /><Polygon points="185,60 176,72 194,72" fill="#FFFFFF" /></G>),
     mid: (<G><Ellipse cx={100} cy={132} rx={140} ry={26} fill="#E9E3F7" />{tree(20, 130, 1.1, '#6B5AAE', '#5A4A99')}{tree(180, 128, 1.2, '#6B5AAE', '#5A4A99')}<Rect x={68} y={82} width={64} height={44} rx={3} fill="#8B5A3C" /><Polygon points="60,84 100,54 140,84" fill="#6E4630" /><Rect x={106} y={58} width={8} height={16} fill="#6E4630" />
@@ -157,6 +194,7 @@ const SCENES: Record<string, Scene> = {
     particles: (<G>{star(40, 140, 1.5)}{star(120, 160, 1.3)}{star(170, 150, 1.2)}{star(80, 190, 1.4)}{star(20, 180, 1)}</G>),
   },
   env_garden: {
+    groundColor: '#4FA98B', groundDark: '#3E8C72',
     sky: (<G>{grad('gs', '#2E2A57', '#5A4E9A')}<Rect width={200} height={200} fill="url(#gs)" />{star(20, 20, 1.2)}{star(60, 40, 0.8)}{star(120, 18, 1.4)}{star(170, 44, 1)}{star(90, 60, 0.7)}{star(150, 70, 0.9)}<Circle cx={150} cy={44} r={20} fill="#FFF3B0" /><Circle cx={143} cy={38} r={16} fill="#5A4E9A" opacity={0.15} /></G>),
     far: (<G opacity={0.7}><Ellipse cx={30} cy={120} rx={30} ry={18} fill="#4B3F86" /><Ellipse cx={170} cy={116} rx={36} ry={20} fill="#4B3F86" /><Ellipse cx={100} cy={126} rx={40} ry={16} fill="#3F3473" /></G>),
     mid: (<G><Ellipse cx={100} cy={168} rx={140} ry={30} fill="#4FA98B" /><Ellipse cx={100} cy={174} rx={120} ry={20} fill="#5FB89A" />{[24, 44, 150, 176].map((x, i) => flower(x, 166 + (i % 2) * 5, ['#F5A3B5', '#B8A9E8', '#F9DC7A', '#F5A3B5'][i]))}
@@ -165,6 +203,7 @@ const SCENES: Record<string, Scene> = {
     particles: (<G>{star(50, 150, 1.6, '#F9DC7A')}{star(140, 160, 1.4, '#F9DC7A')}{star(100, 180, 1.2, '#FFF3B0')}{star(30, 190, 1.5, '#F9DC7A')}{star(170, 190, 1.1, '#FFF3B0')}</G>),
   },
   env_village: {
+    groundColor: '#F4F7FF', groundDark: '#D9DEEE',
     sky: (<G>{grad('vs', '#2B3A6B', '#5F6FA8')}<Rect width={200} height={200} fill="url(#vs)" />{star(30, 20, 1.2)}{star(80, 30, 0.8)}{star(130, 16, 1.2)}{star(170, 40, 1)}</G>),
     far: (<G><Polygon points="-10,110 40,60 90,110" fill="#8C9BC9" /><Polygon points="70,110 130,50 190,110" fill="#7A8ABD" /><Polygon points="150,110 200,70 250,110" fill="#8C9BC9" /><Polygon points="40,60 32,72 48,72" fill="#FFFFFF" /><Polygon points="130,50 120,66 140,66" fill="#FFFFFF" /></G>),
     mid: (<G><Rect x={0} y={118} width={200} height={40} fill="#E9EEFA" /><Rect x={16} y={90} width={44} height={40} rx={2} fill="#B47656" /><Polygon points="10,92 38,66 66,92" fill="#F4F7FF" /><Rect x={30} y={106} width={14} height={14} rx={1} fill="#FFE08A" /><Rect x={140} y={86} width={48} height={44} rx={2} fill="#9C6446" /><Polygon points="134,88 164,60 194,88" fill="#F4F7FF" /><Rect x={150} y={100} width={10} height={10} fill="#FFE08A" /><Rect x={168} y={100} width={10} height={10} fill="#FFE08A" /><Rect x={176} y={62} width={7} height={14} fill="#6E4630" />
@@ -173,6 +212,7 @@ const SCENES: Record<string, Scene> = {
     particles: (<G>{star(40, 140, 1.4)}{star(100, 150, 1.2)}{star(160, 140, 1.6)}{star(70, 190, 1.3)}{star(130, 185, 1.1)}</G>),
   },
   env_space: {
+    groundColor: '#2A2F5C', groundDark: '#5B60A0',
     sky: (<G>{grad('ss', '#141733', '#2A2F5C')}<Rect width={200} height={200} fill="url(#ss)" />{star(20, 20, 1)}{star(50, 60, 0.7)}{star(90, 30, 1.2)}{star(140, 50, 0.8)}{star(170, 20, 1.1)}{star(120, 80, 0.6)}{star(30, 90, 0.9)}<Circle cx={150} cy={70} r={22} fill="#6FB6E0" /><Path d="M132 64 q18 -10 36 0 q-6 14 -18 16 q-14 -2 -18 -16z" fill="#8FD3B6" opacity={0.8} /><Ellipse cx={144} cy={62} rx={6} ry={3} fill="#FFFFFF" opacity={0.6} /></G>),
     far: (<G><Rect x={0} y={0} width={200} height={200} fill="none" /><Rect x={0} y={100} width={200} height={100} fill="#3B3F6E" /><Rect x={0} y={100} width={200} height={4} fill="#5B60A0" /><Path d="M0 100 a100 40 0 0 1 200 0z" fill="#2A2F5C" /><Path d="M14 100 a86 30 0 0 1 172 0" stroke="#8EC5E8" strokeWidth={3} fill="none" /></G>),
     mid: (<G>{Array.from({ length: 5 }).map((_, i) => <Rect key={i} x={0} y={116 + i * 14} width={200} height={1} fill="#4D5288" />)}<Rect x={16} y={112} width={36} height={30} rx={4} fill="#4D5288" /><Rect x={20} y={116} width={28} height={10} rx={2} fill="#8FD3B6" /><Rect x={20} y={130} width={6} height={6} rx={1} fill="#E76F51" /><Rect x={30} y={130} width={6} height={6} rx={1} fill="#F4C24B" /><Rect x={40} y={130} width={6} height={6} rx={1} fill="#8EC5E8" /><Rect x={150} y={108} width={36} height={34} rx={4} fill="#4D5288" /><Circle cx={168} cy={125} r={11} fill="#8EC5E8" /><Circle cx={168} cy={125} r={6} fill="#2A2F5C" /><Circle cx={168} cy={125} r={2} fill="#8FD3B6" /></G>),

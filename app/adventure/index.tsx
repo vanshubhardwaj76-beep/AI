@@ -30,7 +30,7 @@ export default function AdventureScreen() {
   const current = runs.find((r) => phaseOf(r, now) !== 'idle');
   const phase = phaseOf(current, now);
   const loc = current ? adventureById(current.locationId) : null;
-  const stage = Math.min(width - spacing.lg * 2, 420);
+  const stage = Math.max(240, Math.min(width - spacing.lg * 2, 420));
 
   const onStart = async (id: string) => {
     setBusy(true);

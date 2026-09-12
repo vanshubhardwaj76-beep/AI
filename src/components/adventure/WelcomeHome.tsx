@@ -28,7 +28,7 @@ const RARITY_COLOR: Record<Discovery['rarity'], string> = { common: '#6DBF9C', u
 export function WelcomeHome({ run, loc, pet, onDone }: Props) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const stage = Math.min(width - spacing.lg * 2, 420);
+  const stage = Math.max(240, Math.min(width - spacing.lg * 2, 420));
   const result = run.result!;
   const discoveries = result.discoveries ?? [];
 

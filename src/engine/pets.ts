@@ -366,20 +366,25 @@ interface FrameSpec {
  */
 function applyStride(c: PixelCanvas, ground: number, stride: number) {
   if (!stride) return;
-  const rows = [ground - 1, ground, ground + 1];
-  for (const y of rows) {
-    const row = c.grid[y];
-    if (!row) continue;
-    const src = [...row];
-    for (let x = 0; x < c.size; x++) row[x] = null;
+  // Feet rows: left foot forward = shift +2, right foot back = -2 (and the reverse on the other frame).
+  // The lifted (back) foot is also raised one row so the stride reads as a real step.
+  const rows = [ground - 2, ground - 1, ground, ground + 1];
+  const snapshot = rows.map((y) => (c.grid[y] ? [...c.grid[y]] : null));
+  rows.forEach((y) => { if (c.grid[y]) for (let x = 0; x < c.size; x++) c.grid[y][x] = null; });
+  rows.forEach((y, i) => {
+    const src = snapshot[i];
+    if (!src) return;
     for (let x = 0; x < c.size; x++) {
       const px = src[x];
       if (!px) continue;
-      const dx = x < 16 ? stride : -stride;
-      const nx = x + dx;
-      if (nx >= 0 && nx < c.size) row[nx] = px;
+      const left = x < 16;
+      const forward = left ? stride > 0 : stride < 0;
+      const dx = (left ? 1 : -1) * stride * 2;
+      const dy = forward ? 0 : -1;
+      const nx = x + dx, ny = y + dy;
+      if (nx >= 0 && nx < c.size && ny >= 0 && ny < c.size && !c.grid[ny][nx]) c.grid[ny][nx] = px;
     }
-  }
+  });
 }
 
 function build(species: PetSpecies, spec: FrameSpec): Sprite {
@@ -433,11 +438,15 @@ export function getPetSheet(species: PetSpecies): PetSheet {
       B({ body: { bob: 1, squash: 0.6, limbs: 'down' }, expr: 'closed', mouth: 'small' }),
       B({ body: { bob: 0, squash: 0.4, limbs: 'down' }, expr: 'closed', mouth: 'small' }),
     ],
+    // 6-frame walk: contact (stride) → passing (compressed) → contact (other leg) → passing, with
+    // the head bobbing (bob 0/1) and body squash alternating so the whole silhouette moves.
     walking: [
-      B({ body: { bob: 0, squash: -0.3, limbs: 'rest' }, expr: 'happy', mouth: 'smile', stride: 1 }),
-      B({ body: { bob: 1, squash: 0.3, limbs: 'rest' }, expr: 'happy', mouth: 'smile', stride: 0 }),
-      B({ body: { bob: 0, squash: -0.3, limbs: 'rest' }, expr: 'happy', mouth: 'smile', stride: -1 }),
-      B({ body: { bob: 1, squash: 0.3, limbs: 'rest' }, expr: 'open', mouth: 'smile', stride: 0 }),
+      B({ body: { bob: 0, squash: -0.6, limbs: 'rest' }, expr: 'happy', mouth: 'smile', stride: 1 }),
+      B({ body: { bob: 1, squash: 0.4, limbs: 'rest' }, expr: 'happy', mouth: 'smile', stride: 1 }),
+      B({ body: { bob: 1, squash: 0.8, limbs: 'rest' }, expr: 'open', mouth: 'smile', stride: 0 }),
+      B({ body: { bob: 0, squash: -0.6, limbs: 'rest' }, expr: 'happy', mouth: 'smile', stride: -1 }),
+      B({ body: { bob: 1, squash: 0.4, limbs: 'rest' }, expr: 'happy', mouth: 'smile', stride: -1 }),
+      B({ body: { bob: 1, squash: 0.8, limbs: 'rest' }, expr: 'open', mouth: 'smile', stride: 0 }),
     ],
     tap: [B({ body: { bob: 1, squash: 1.2, limbs: 'rest' }, expr: 'closed', mouth: 'grin' }), B({ body: { bob: -1, squash: -1, limbs: 'up' }, expr: 'happy', mouth: 'grin' })],
     levelup: [

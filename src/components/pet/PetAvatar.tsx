@@ -67,7 +67,7 @@ export function PetAvatar({ pet, species, mood, size = 240, showEnvironment = tr
 
   // frame ticker (breathing / stride) – speed depends on pose
   useEffect(() => {
-    const speed = asleep || pose === 'tired' ? 1300 : pose === 'walking' ? 170 : pose === 'excited' || pose === 'levelup' || pose === 'tap' ? 220 : 700;
+    const speed = asleep || pose === 'tired' ? 1300 : pose === 'walking' ? 120 : pose === 'excited' || pose === 'levelup' || pose === 'tap' ? 220 : 700;
     const id = setInterval(() => setTick((t) => t + 1), speed);
     return () => clearInterval(id);
   }, [pose]);
@@ -95,8 +95,10 @@ export function PetAvatar({ pet, species, mood, size = 240, showEnvironment = tr
     const loopCleanup = () => { cancelAnimation(bob); cancelAnimation(tilt); cancelAnimation(squash); tilt.value = withTiming(0, { duration: 120 }); squash.value = withTiming(1, { duration: 120 }); };
     if (pose === 'walking') {
       // quick bounce synced to the stride + tiny sway of the whole body
-      bob.value = withRepeat(withSequence(withTiming(-size * 0.02, { duration: 170, easing: Easing.out(Easing.quad) }), withTiming(0, { duration: 170, easing: Easing.in(Easing.quad) })), -1);
-      tilt.value = withRepeat(withSequence(withTiming(-2.5, { duration: 340, easing: Easing.inOut(Easing.sin) }), withTiming(2.5, { duration: 340, easing: Easing.inOut(Easing.sin) })), -1);
+      // one bounce per step (3 sprite frames @120ms = 360ms), sway once per full stride
+      bob.value = withRepeat(withSequence(withTiming(-size * 0.035, { duration: 180, easing: Easing.out(Easing.quad) }), withTiming(0, { duration: 180, easing: Easing.in(Easing.quad) })), -1);
+      tilt.value = withRepeat(withSequence(withTiming(-3.5, { duration: 360, easing: Easing.inOut(Easing.sin) }), withTiming(3.5, { duration: 360, easing: Easing.inOut(Easing.sin) })), -1);
+      squash.value = withRepeat(withSequence(withTiming(1.04, { duration: 180, easing: Easing.inOut(Easing.sin) }), withTiming(0.97, { duration: 180, easing: Easing.inOut(Easing.sin) })), -1);
       return loopCleanup;
     }
     if (asleep) {

@@ -58,7 +58,7 @@ export default function PetScreen() {
   const collectibles = useMemo(() => ITEMS.filter((i) => i.kind === 'collectible'), []);
   if (!pet) return null;
   const info = speciesInfo(pet.species);
-  const stageSize = Math.min(width - spacing.lg * 2, 420);
+  const stageSize = Math.max(240, Math.min(width - spacing.lg * 2, 420));
 
   const onItem = async (item: Item) => {
     const ownedIt = has(item.id);
